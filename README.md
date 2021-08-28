@@ -2,6 +2,8 @@
 
 This repository focuses on training semantic segmentation models to predict the presence of floodwater for disaster prevention. The repository contains code from our submission to the STAC Overflow: Map Floodwater from Radar Imagery competition on DrivenData.org.
 
+![c2s-sentinel-1](./imgs/c2s-sentinel-1.jpeg)
+
 The focus of this repository is to train and deploy semantic segmentation with SageMaker. For my team's repository of the actual competition, go [here[(https://github.com/JayThibs/map-floodwater-drivendata-competition).
 
 You can find the competition page [here](https://www.drivendata.org/competitions/81/detect-flood-water/page/385/).
@@ -26,11 +28,21 @@ We will be using synthetic-aperture radar (SAR) imagery to predict the presence 
 
 The dataset we’ll be using is a subset of the Sentinel-1 dataset, which contains radar images stored as 512 x 512 pixel GeoTIFFs.
 
+VV Polarization example:
+
+![c2s-vv](./imgs/c2s-vv.png)
+
+VH Polarization example:
+
+![c2s-vh](./imgs/c2s-vh.png)
+
 The following quotes are from the DrivenData competition page (Training set - Images): https://www.drivendata.org/competitions/81/detect-flood-water/page/386/
 
 “Each pixel in a radar image represents the energy that was reflected back to the satellite measured in decibels (dB). Pixel values can range from negative to positive values. A pixel value of 0.0 indicates missing data.”
 
 “Sentinel-1 is a phase-preserving dual-polarization SAR system, meaning that it can receive a signal in both horizontal and vertical polarizations. Different polarizations can be used to bring out different physical properties in a scene. The data for this challenge includes two microwave frequency readings: VV (vertical transmit, vertical receive) and VH (vertical transmit, horizontal receive).”
+
+![c2s-sar-polarization](./imgs/c2s-sar-polarization.png)
 
 # Benchmark Model
 
