@@ -49,7 +49,7 @@ if __name__ =='__main__':
     # Data, model, and output directories. Passed by sagemaker with default to os env variables
     parser.add_argument('-o','--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
     parser.add_argument('-m','--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
-    parser.add_argument('--data_s3_uri', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
+    parser.add_argument('--data_s3_uri', type=str, default='s3://sagemaker-us-east-1-209161541854/floodwater_data')
 
     args, _ = parser.parse_known_args()
     print(args)
