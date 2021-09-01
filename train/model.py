@@ -19,6 +19,8 @@ import rasterio
 from metrics import intersection_and_union
 from loss_funtions import XEDiceLoss
 
+from dataset import FloodDataset
+
 
 class FloodModel(pl.LightningModule):
     def __init__(self, hparams):
