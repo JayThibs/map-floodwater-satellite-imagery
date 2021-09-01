@@ -17,7 +17,7 @@ import albumentations as album
 import rasterio
 
 from metrics import intersection_and_union
-from loss_funtions import XEDiceLoss
+from loss_functions import XEDiceLoss
 
 from dataset import FloodDataset
 
