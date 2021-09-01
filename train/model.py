@@ -22,6 +22,19 @@ from loss_funtions import XEDiceLoss
 from dataset import FloodDataset
 
 
+# These transformations will be passed to our model class
+training_transformations = album.Compose(
+    [
+     album.RandomCrop(256, 256),
+     album.RandomRotate90(),
+     album.HorizontalFlip(),
+     album.VerticalFlip(),
+     album.RandomBrightness(),
+     album.RandomBrightnessContrast()
+    ]
+)
+
+
 class FloodModel(pl.LightningModule):
     def __init__(self, hparams):
         super(FloodModel, self).__init__()
