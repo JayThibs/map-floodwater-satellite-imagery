@@ -49,23 +49,24 @@ if __name__ =='__main__':
     # Data, model, and output directories. Passed by sagemaker with default to os env variables
     parser.add_argument('-o','--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
     parser.add_argument('-m','--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
-    parser.add_argument('--train', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
-    parser.add_argument('--val', type=str, default=os.environ['SM_CHANNEL_TEST'])
+    parser.add_argument('--data_s3_uri', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
 
     args, _ = parser.parse_known_args()
     print(args)
     
     seed_everything(9) # set a seed for reproducibility, seeds torch, numpy, python.random
     
+    data_dir = "/opt/ml/input/data"
+    
     # Read csv for training
     train_dir = args.train
-    train_df = pd.read_csv(os.path.join(train_dir, "train.csv"))
+    train_df = pd.read_csv(os.path.join(data_dir, "train.csv"))
     train_x = train_df[['chip_id', 'vv_path', 'vh_path']]
     train_y = train_df[['chip_id', 'label_path']]
     
     # Read csv for validation
     val_dir = args.val
-    val_df = pd.read_csv(os.path.join(val_dir, "val.csv"))
+    val_df = pd.read_csv(os.path.join(data_dir, "val.csv"))
     val_x = val_df[['chip_id', 'vv_path', 'vh_path']]
     val_y = val_df[['chip_id', 'label_path']]
         
@@ -91,5 +92,5 @@ if __name__ =='__main__':
     ss_flood_model.fit() # orchestrates our model training
 
     # After model has been trained, save its state into model_dir which is then copied to back S3
-    with open(os.path.join(args.model_dir, 'model.pth'), 'wb') as f:
+    with open(os.path.join(args.model_dir, 'model_1.pth'), 'wb') as f:
         torch.save(ss_flood_model.state_dict(), f)
