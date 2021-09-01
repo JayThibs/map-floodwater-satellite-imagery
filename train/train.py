@@ -7,6 +7,8 @@ import pytorch_lightning as pl
 from pytorch_lightning import Trainer
 from pytorch_lightning import seed_everything
 
+from model import FloodModel
+
 
 if __name__ =='__main__':
 
