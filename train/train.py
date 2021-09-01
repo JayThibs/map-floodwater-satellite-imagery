@@ -14,11 +14,6 @@ if __name__ =='__main__':
 
     # our hyperparameters all in a hparams dictionary
     parser.add_argument('--hparams', type=dict, default={
-        # Required hparams
-        "x_train": pd.DataFrame(),
-        "x_val": pd.DataFrame(),
-        "y_train": pd.DataFrame(),
-        "y_val": pd.DataFrame(),
         # Optional hparams
         "backbone": "resnet34",
         "weights": "imagenet",
@@ -61,13 +56,25 @@ if __name__ =='__main__':
     # Read csv for training
     train_dir = args.train
     train_df = pd.read_csv(os.path.join(train_dir, "train.csv"))
-    
+    train_x = train_df[['chip_id', 'vv_path', 'vh_path']]
+    train_y = train_df[['chip_id', 'label_path']]
     
     # Read csv for validation
     val_dir = args.val
     val_df = pd.read_csv(os.path.join(val_dir, "val.csv"))
+    val_x = val_df[['chip_id', 'vv_path', 'vh_path']]
+    val_y = val_df[['chip_id', 'label_path']]
+        
+    data_dict = {
+        "x_train": train_x,
+        "x_val": val_x,
+        "y_train": train_y,
+        "y_val": val_y,
+    }
     
-
+    hparams = args.hparams
+    hparams.update(data_dict)
+    
     # Now we have all parameters and hyperparameters available and we need to match them with sagemaker 
     # structure. default_root_dir is set to out_put_data_dir to retrieve from training instances all the 
     # checkpoint and intermediary data produced by lightning
