@@ -1,9 +1,11 @@
 import argparse
 import os
+import pandas as pd
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer
+
 
 
 if __name__ =='__main__':
@@ -51,10 +53,20 @@ if __name__ =='__main__':
     parser.add_argument('-o','--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
     parser.add_argument('-m','--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
     parser.add_argument('--train', type=str, default=os.environ['SM_CHANNEL_TRAIN'])
-    parser.add_argument('--test', type=str, default=os.environ['SM_CHANNEL_TEST'])
+    parser.add_argument('--val', type=str, default=os.environ['SM_CHANNEL_TEST'])
 
     args, _ = parser.parse_known_args()
     print(args)
+    
+    # Read csv for training
+    train_dir = args.train
+    train_df = pd.read_csv(os.path.join(train_dir, "train.csv"))
+    
+    
+    # Read csv for validation
+    val_dir = args.val
+    val_df = pd.read_csv(os.path.join(val_dir, "val.csv"))
+    
 
     # Now we have all parameters and hyperparameters available and we need to match them with sagemaker 
     # structure. default_root_dir is set to out_put_data_dir to retrieve from training instances all the 
