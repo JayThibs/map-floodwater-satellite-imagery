@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer
-
+from pytorch_lightning import seed_everything
 
 
 if __name__ =='__main__':
@@ -52,6 +52,8 @@ if __name__ =='__main__':
 
     args, _ = parser.parse_known_args()
     print(args)
+    
+    seed_everything(9) # set a seed for reproducibility, seeds torch, numpy, python.random
     
     # Read csv for training
     train_dir = args.train
