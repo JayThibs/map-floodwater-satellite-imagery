@@ -19,21 +19,6 @@ import rasterio
 from metrics import intersection_and_union
 from loss_funtions import XEDiceLoss
 
-# To prevent overfitting during training, we'll increase the size of our training data 
-# by applying a set of data augmentations to our input, including random cropping, 
-# random 90 degree rotations, and horizontal and vertical flipping. The image augmentation 
-# library albumentations is a helpful resource for this task.
-# These transformations will be passed to our model class
-training_transformations = album.Compose(
-    [
-     album.RandomCrop(256, 256),
-     album.RandomRotate90(),
-     album.HorizontalFlip(),
-     album.VerticalFlip(),
-     album.RandomBrightness(),
-     album.RandomBrightnessContrast()
-    ]
-)
 
 class FloodModel(pl.LightningModule):
     def __init__(self, hparams):
