@@ -56,7 +56,7 @@ if __name__ =='__main__':
     
     seed_everything(9) # set a seed for reproducibility, seeds torch, numpy, python.random
     
-    data_dir = "/opt/ml/input/data"
+    data_dir = "/opt/ml/input/floodwater_data"
     
     # Read csv for training
     train_dir = args.train
