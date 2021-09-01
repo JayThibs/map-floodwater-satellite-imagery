@@ -16,7 +16,24 @@ import segmentation_models_pytorch as smp
 import albumentations as album
 import rasterio
 
+from metrics import intersection_and_union
+from loss_funtions import XEDiceLoss
 
+# To prevent overfitting during training, we'll increase the size of our training data 
+# by applying a set of data augmentations to our input, including random cropping, 
+# random 90 degree rotations, and horizontal and vertical flipping. The image augmentation 
+# library albumentations is a helpful resource for this task.
+# These transformations will be passed to our model class
+training_transformations = album.Compose(
+    [
+     album.RandomCrop(256, 256),
+     album.RandomRotate90(),
+     album.HorizontalFlip(),
+     album.VerticalFlip(),
+     album.RandomBrightness(),
+     album.RandomBrightnessContrast()
+    ]
+)
 
 class FloodModel(pl.LightningModule):
     def __init__(self, hparams):
@@ -36,7 +53,7 @@ class FloodModel(pl.LightningModule):
         self.x_val = self.hparams.get("x_val")
         self.y_val = self.hparams.get("y_val")
         self.output_path = self.hparams.get("output_path", "model-outputs")
-        self.gpu = self.hparams.get("gpu", False)
+        self.gpus = self.hparams.get("gpus", False)
         self.transform = training_transformations
 
         # Where final model will be saved
@@ -70,7 +87,7 @@ class FloodModel(pl.LightningModule):
         x = batch["chip"]
         y = batch["label"].long()
 
-        if self.gpu:
+        if self.gpus:
             x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
 
         # Forward pass
@@ -99,7 +116,7 @@ class FloodModel(pl.LightningModule):
         # Load images and labels
         x = batch["chip"]
         y = batch["label"].long()
-        if self.gpu:
+        if self.gpus:
             x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
 
         # Forward pass & softmax
@@ -177,7 +194,7 @@ class FloodModel(pl.LightningModule):
            in_channels=2,
            classes=2,
         )
-        if self.gpu:
+        if self.gpus:
             unet_model.cuda()
         return unet_model
 
@@ -207,7 +224,7 @@ class FloodModel(pl.LightningModule):
             "min_epochs": self.min_epochs,
             "default_root_dir": self.output_path,
             "logger": logger,
-            "gpus": None if not self.gpu else 1,
+            "gpus": None if not self.gpus else 1,
             "fast_dev_run": self.hparams.get("fast_dev_run", False),
             "num_sanity_val_steps": self.hparams.get("val_sanity_checks", 0),
         }
