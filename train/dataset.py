@@ -33,6 +33,8 @@ class FloodDataset(Dataset):
         x_arr = np.stack([vv_path, vh_path], axis=-1)
 
         # Min-max normalization
+        # Our custom dataset normalizes input pixel values by applying min-max 
+        # normalization with a minimum of -77 and a maximum of 26.
         min_norm = -77
         max_norm = 26
         x_arr = np.clip(x_arr, min_norm, max_norm)
