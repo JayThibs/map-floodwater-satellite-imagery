@@ -36,7 +36,7 @@ if __name__ =='__main__':
     parser.add_argument('--gpus', type=int, default=1) # could be used for multi-GPU as well
     parser.add_argument('--backbone', type=str, default='resnet34')
     parser.add_argument('--weights', type=str, default="imagenet")
-    parser.add_argument('--lr', type=int, default=1e-3)
+    parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--min_epochs', type=int, default=6)
     parser.add_argument('--max_epochs', type=int, default=1000)
     parser.add_argument('--patience', type=int, default=4)
@@ -50,23 +50,28 @@ if __name__ =='__main__':
     parser.add_argument('-o','--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
     parser.add_argument('-m','--model-dir', type=str, default=os.environ['SM_MODEL_DIR'])
     parser.add_argument('--data_s3_uri', type=str, default='s3://sagemaker-us-east-1-209161541854/floodwater_data')
+    parser.add_argument('--train_features', type=str, default='s3://sagemaker-us-east-1-209161541854/floodwater_data/train_features')
+    parser.add_argument('--train_labels', type=str, default='s3://sagemaker-us-east-1-209161541854/floodwater_data/train_labels')
+    
 
     args, _ = parser.parse_known_args()
     print(args)
     
     seed_everything(9) # set a seed for reproducibility, seeds torch, numpy, python.random
     
-    data_dir = "/opt/ml/input/floodwater_data"
+    data_dir = "/opt/ml/input/data/data_s3_uri"
+    
+#     print(os.listdir("/opt/ml/input/data/"))
+#     print(os.listdir("/opt/ml/input/data/data_s3_uri"))
+#     print(os.listdir("/opt/ml/input/data/data_s3_uri/train_features"))  
     
     # Read csv for training
-    train_dir = args.train
-    train_df = pd.read_csv(os.path.join(data_dir, "train.csv"))
+    train_df = pd.read_csv(os.path.join(data_dir, "train_df.csv"))
     train_x = train_df[['chip_id', 'vv_path', 'vh_path']]
     train_y = train_df[['chip_id', 'label_path']]
     
     # Read csv for validation
-    val_dir = args.val
-    val_df = pd.read_csv(os.path.join(data_dir, "val.csv"))
+    val_df = pd.read_csv(os.path.join(data_dir, "val_df.csv"))
     val_x = val_df[['chip_id', 'vv_path', 'vh_path']]
     val_y = val_df[['chip_id', 'label_path']]
         
