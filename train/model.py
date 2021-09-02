@@ -130,7 +130,7 @@ class FloodModel(pl.LightningModule):
         self.union += union
 
         # Log batch IOU
-        batch_iou = intersection // union
+        batch_iou = intersection / union
         self.log(
             "iou", batch_iou, on_step=True, on_epoch=True, prog_bar=True, logger=True
         )
@@ -175,7 +175,7 @@ class FloodModel(pl.LightningModule):
 
     def validation_epoch_end(self, outputs):
         # Calculate IOU at the end of epoch
-        epoch_iou = self.intersection // self.union
+        epoch_iou = self.intersection / self.union
 
         # Reset metrics before next epoch
         self.intersection = 0
