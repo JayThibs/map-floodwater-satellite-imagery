@@ -9,7 +9,7 @@ from torch.optim import Adam, lr_scheduler
 
 import pytorch_lightning as pl
 from pytorch_lightning.metrics.functional import iou
-from pytorch_lightning.callbacks import ModelCheckpoint, BackboneFinetuning, QuantizationAwareTraining, ModelPruning, EarlyStopping
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 
 import segmentation_models_pytorch as smp
@@ -201,7 +201,7 @@ class FloodModel(pl.LightningModule):
     def _get_trainer_params(self):
         # Define callback behavior
         checkpoint_callback = ModelCheckpoint(
-            dirpath=self.output_path,
+            filepath=self.output_path,
             monitor="val_loss",
             mode="max",
             verbose=True,
