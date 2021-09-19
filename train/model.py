@@ -222,14 +222,14 @@ class FloodModel(pl.LightningModule):
         # Specify where Tensorboard logs will be saved
         self.log_path = Path.cwd() / self.hparams.get("log_path", "tensorboard-logs")
         self.log_path.mkdir(exist_ok=True)
-        logger = TensorBoardLogger(self.log_path, name="benchmark-model")
+        tb_logger = TensorBoardLogger(self.log_path, name="benchmark-model")
 
         trainer_params = {
             "callbacks": [checkpoint_callback, early_stop_callback],
             "max_epochs": self.max_epochs,
             "min_epochs": self.min_epochs,
             "default_root_dir": self.output_path,
-            "logger": logger,
+            "logger": tb_logger,
             "gpus": 1,
             "fast_dev_run": self.hparams.get("fast_dev_run", False),
             "num_sanity_val_steps": self.hparams.get("val_sanity_checks", 0),
