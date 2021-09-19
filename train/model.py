@@ -92,13 +92,19 @@ class FloodModel(pl.LightningModule):
 
         # Forward pass
         preds = self.forward(x)
-
+        
+#         print('training_step checking preds and y')
+#         print(preds)
+#         print(type(preds))
+#         print(y)
+#         print(type(y))
+        
         # Calculate training loss
         criterion = XEDiceLoss()
         xe_dice_loss = criterion(preds, y)
 
         # Log batch xe_dice_loss
-        self.log(
+        self.logger(
             "xe_dice_loss",
             xe_dice_loss,
             on_step=True,
@@ -131,7 +137,7 @@ class FloodModel(pl.LightningModule):
 
         # Log batch IOU
         batch_iou = intersection / union
-        self.log(
+        self.logger(
             "iou", batch_iou, on_step=True, on_epoch=True, prog_bar=True, logger=True
         )
         return batch_iou
@@ -182,7 +188,7 @@ class FloodModel(pl.LightningModule):
         self.union = 0
 
         # Log epoch validation IOU
-        self.log("val_loss", epoch_iou, on_epoch=True, prog_bar=True, logger=True)
+        self.logger("val_loss", epoch_iou, on_epoch=True, prog_bar=True, logger=True)
         return epoch_iou
 
     ## Convenience Methods ##
