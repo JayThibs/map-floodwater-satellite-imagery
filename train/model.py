@@ -237,7 +237,8 @@ class FloodModel(pl.LightningModule):
         tb_logger = TensorBoardLogger(self.log_path, name="benchmark-model")
 
         trainer_params = {
-            "callbacks": [checkpoint_callback, early_stop_callback],
+            "early_stop_callback": early_stop_callback,
+            "checkpoint_callback": checkpoint_callback,
             "max_epochs": self.max_epochs,
             "min_epochs": self.min_epochs,
             "default_root_dir": self.output_path,
