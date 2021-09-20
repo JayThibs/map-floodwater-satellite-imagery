@@ -10,6 +10,7 @@ from torch.optim import Adam, lr_scheduler
 import pytorch_lightning as pl
 from pytorch_lightning.metrics.functional import iou
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
+from pytorch_lightning.loggers import TensorBoardLogger
 
 import segmentation_models_pytorch as smp
 import albumentations as album
@@ -103,7 +104,7 @@ class FloodModel(pl.LightningModule):
         xe_dice_loss = criterion(preds, y)
         
         # Logs training loss
-        logs = {'train_loss': loss}
+        logs = {'train_loss': xe_dice_loss}
         
         output = {
             # This is required in training to be used by backpropagation
