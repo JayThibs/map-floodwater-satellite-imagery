@@ -10,7 +10,6 @@ from torch.optim import Adam, lr_scheduler
 import pytorch_lightning as pl
 from pytorch_lightning.metrics.functional import iou
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 
 import segmentation_models_pytorch as smp
 import albumentations as album
@@ -102,17 +101,27 @@ class FloodModel(pl.LightningModule):
         # Calculate training loss
         criterion = XEDiceLoss()
         xe_dice_loss = criterion(preds, y)
-
-        # Log batch xe_dice_loss
-        self.logger(
-            "xe_dice_loss",
-            xe_dice_loss,
-            on_step=True,
-            on_epoch=True,
-            prog_bar=True,
-            logger=True
-        )
-        return xe_dice_loss
+        
+        # Logs training loss
+        logs = {'train_loss': loss}
+        
+        output = {
+            # This is required in training to be used by backpropagation
+            'loss': xe_dice_loss,
+            # This is optional for logging pourposes
+            'log': logs
+        }
+        
+        # For newer pl versions:
+#         # Log batch xe_dice_loss
+#         self.log(
+#             "xe_dice_loss",
+#             xe_dice_loss,
+#             on_step=True,
+#             on_epoch=True,
+#             prog_bar=True
+#         )
+        return output
 
     def validation_step(self, batch, batch_idx):
         # Switch on evaluation mode
@@ -134,13 +143,14 @@ class FloodModel(pl.LightningModule):
         intersection, union = intersection_and_union(preds, y)
         self.intersection += intersection
         self.union += union
-
+        
         # Log batch IOU
         batch_iou = intersection / union
-        self.logger(
-            "iou", batch_iou, on_step=True, on_epoch=True, prog_bar=True, logger=True
-        )
-        return batch_iou
+        # For newer pl versions:
+#         self.logger(
+#             "iou", batch_iou, on_step=True, on_epoch=True, prog_bar=True
+#         )
+        return {'val_loss': batch_iou}
 
     def train_dataloader(self):
         # DataLoader class for training
@@ -187,9 +197,10 @@ class FloodModel(pl.LightningModule):
         self.intersection = 0
         self.union = 0
 
-        # Log epoch validation IOU
-        self.logger("val_loss", epoch_iou, on_epoch=True, prog_bar=True, logger=True)
-        return epoch_iou
+        # For newer pl versions:
+#         # Log epoch validation IOU
+#         self.log("val_loss", epoch_iou, on_epoch=True, prog_bar=True)
+        return {'val_loss': epoch_iou}
 
     ## Convenience Methods ##
 
