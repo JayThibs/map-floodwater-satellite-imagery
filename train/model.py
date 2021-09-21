@@ -122,7 +122,10 @@ class FloodModel(pl.LightningModule):
 #             on_epoch=True,
 #             prog_bar=True
 #         )
-        return output
+
+        result = pl.TrainResult(minimize=xe_dice_loss)
+        result.log('loss', xe_dice_loss)
+        return result
 
     def validation_step(self, batch, batch_idx):
         # Switch on evaluation mode
@@ -151,7 +154,10 @@ class FloodModel(pl.LightningModule):
 #         self.logger(
 #             "iou", batch_iou, on_step=True, on_epoch=True, prog_bar=True
 #         )
-        return {'val_loss': batch_iou}
+
+        result = pl.EvalResult(checkpoint_on=batch_iou)
+        result.log('val_loss', batch_iou, prog_bar=True, on_step=True)
+        return result
 
     def train_dataloader(self):
         # DataLoader class for training
@@ -184,10 +190,10 @@ class FloodModel(pl.LightningModule):
 
         scheduler = {
             "scheduler": scheduler,
+            "reduce_on_plateau": True,
             "interval": "epoch",
-            "monitor": "loss",
+            "monitor": "checkpoint_on",
         } # logged value to monitor
-
         return [optimizer], [scheduler]
 
     def validation_epoch_end(self, outputs):
@@ -201,7 +207,9 @@ class FloodModel(pl.LightningModule):
         # For newer pl versions:
 #         # Log epoch validation IOU
 #         self.log("val_loss", epoch_iou, on_epoch=True, prog_bar=True)
-        return {'val_loss': epoch_iou}
+        result = pl.EvalResult(checkpoint_on=epoch_iou, early_stop_on=epoch_iou)
+        result.log('val_loss', epoch_iou, prog_bar=True, on_step=True)
+        return result
 
     ## Convenience Methods ##
 
@@ -220,12 +228,12 @@ class FloodModel(pl.LightningModule):
         # Define callback behavior
         checkpoint_callback = ModelCheckpoint(
             filepath=self.output_path,
-            monitor="acc",
+            monitor="val_loss",
             mode="max",
             verbose=True,
         )
         early_stop_callback = EarlyStopping(
-            monitor="acc",
+            monitor="val_loss",
             patience=(self.patience * 3),
             mode="max",
             verbose=True,
