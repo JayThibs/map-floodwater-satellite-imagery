@@ -43,7 +43,7 @@ class FloodModel(pl.LightningModule):
         self.backbone = self.hparams.get("backbone", "resnet34")
         self.weights = self.hparams.get("weights", "imagenet")
         self.lr = self.hparams.get("lr", 1e-3)
-        self.max_epochs = self.hparams.get("max_epochs", 1000)
+        self.max_epochs = self.hparams.get("max_epochs", 30)
         self.min_epochs = self.hparams.get("min_epochs", 6)
         self.patience = self.hparams.get("patience", 4)
         self.num_workers = self.hparams.get("num_workers", 2)
@@ -112,7 +112,7 @@ class FloodModel(pl.LightningModule):
             # This is optional for logging pourposes
             'log': logs
         }
-        
+    
         # For newer pl versions:
 #         # Log batch xe_dice_loss
 #         self.log(
@@ -185,7 +185,7 @@ class FloodModel(pl.LightningModule):
         scheduler = {
             "scheduler": scheduler,
             "interval": "epoch",
-            "monitor": "val_loss",
+            "monitor": "loss",
         } # logged value to monitor
 
         return [optimizer], [scheduler]
@@ -220,12 +220,12 @@ class FloodModel(pl.LightningModule):
         # Define callback behavior
         checkpoint_callback = ModelCheckpoint(
             filepath=self.output_path,
-            monitor="val_loss",
+            monitor="acc",
             mode="max",
             verbose=True,
         )
         early_stop_callback = EarlyStopping(
-            monitor="val_loss",
+            monitor="acc",
             patience=(self.patience * 3),
             mode="max",
             verbose=True,
