@@ -228,16 +228,16 @@ class FloodModel(pl.LightningModule):
         # Define callback behavior
         checkpoint_callback = ModelCheckpoint(
             filepath=self.output_path,
-            monitor="val_loss",
+            monitor="checkpoint_on",
             mode="max",
             verbose=True,
         )
-        early_stop_callback = EarlyStopping(
-            monitor="val_loss",
-            patience=(self.patience * 3),
-            mode="max",
-            verbose=True,
-        )
+#         early_stop_callback = EarlyStopping(
+#             monitor="val_loss",
+#             patience=(self.patience * 3),
+#             mode="max",
+#             verbose=True,
+#         )
 
         # Specify where Tensorboard logs will be saved
         self.log_path = Path.cwd() / self.hparams.get("log_path", "tensorboard-logs")
@@ -245,7 +245,7 @@ class FloodModel(pl.LightningModule):
         tb_logger = TensorBoardLogger(self.log_path, name="benchmark-model")
 
         trainer_params = {
-            "early_stop_callback": early_stop_callback,
+#             "early_stop_callback": early_stop_callback,
             "checkpoint_callback": checkpoint_callback,
             "max_epochs": self.max_epochs,
             "min_epochs": self.min_epochs,
