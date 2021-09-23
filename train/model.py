@@ -9,8 +9,8 @@ from torch.optim import Adam, lr_scheduler
 
 import pytorch_lightning as pl
 from pytorch_lightning.metrics.functional import iou
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, BackboneFinetuning
+from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 
 import segmentation_models_pytorch as smp
 import albumentations as album
@@ -103,29 +103,32 @@ class FloodModel(pl.LightningModule):
         criterion = XEDiceLoss()
         xe_dice_loss = criterion(preds, y)
         
-        # Logs training loss
-        logs = {'train_loss': xe_dice_loss}
+        # For 0.9.0 pl:
+#         # Logs training loss
+#         logs = {'train_loss': xe_dice_loss}
         
-        output = {
-            # This is required in training to be used by backpropagation
-            'loss': xe_dice_loss,
-            # This is optional for logging pourposes
-            'log': logs
-        }
+#         output = {
+#             # This is required in training to be used by backpropagation
+#             'loss': xe_dice_loss,
+#             # This is optional for logging pourposes
+#             'log': logs
+#         }
+
+#         result = pl.TrainResult(minimize=xe_dice_loss)
+#         result.log('loss', xe_dice_loss)
     
         # For newer pl versions:
-#         # Log batch xe_dice_loss
-#         self.log(
-#             "xe_dice_loss",
-#             xe_dice_loss,
-#             on_step=True,
-#             on_epoch=True,
-#             prog_bar=True
-#         )
+        # Log batch xe_dice_loss
+        self.log(
+            "xe_dice_loss",
+            xe_dice_loss,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+            logger=True
+        )
 
-        result = pl.TrainResult(minimize=xe_dice_loss)
-        result.log('loss', xe_dice_loss)
-        return result
+        return xe_dice_loss
 
     def validation_step(self, batch, batch_idx):
         # Switch on evaluation mode
@@ -148,16 +151,18 @@ class FloodModel(pl.LightningModule):
         self.intersection += intersection
         self.union += union
         
+        # For 0.9.0 pl:
+#         result = pl.EvalResult(checkpoint_on=batch_iou)
+#         result.log('val_loss', batch_iou, prog_bar=True, on_step=True)
+        
         # Log batch IOU
         batch_iou = intersection / union
-        # For newer pl versions:
-#         self.logger(
-#             "iou", batch_iou, on_step=True, on_epoch=True, prog_bar=True
-#         )
+#         For newer pl versions:
+        self.log(
+            "iou", batch_iou, on_step=True, on_epoch=True, prog_bar=True, logger=True
+        )
 
-        result = pl.EvalResult(checkpoint_on=batch_iou)
-        result.log('val_loss', batch_iou, prog_bar=True, on_step=True)
-        return result
+        return batch_iou
 
     def train_dataloader(self):
         # DataLoader class for training
@@ -190,9 +195,8 @@ class FloodModel(pl.LightningModule):
 
         scheduler = {
             "scheduler": scheduler,
-            "reduce_on_plateau": True,
             "interval": "epoch",
-            "monitor": "checkpoint_on",
+            "monitor": "val_iou",
         } # logged value to monitor
         return [optimizer], [scheduler]
 
@@ -204,12 +208,15 @@ class FloodModel(pl.LightningModule):
         self.intersection = 0
         self.union = 0
 
+        # For 0.9.0 pl:
+#         result = pl.EvalResult(checkpoint_on=epoch_iou, early_stop_on=epoch_iou)
+#         result.log('val_loss', epoch_iou, prog_bar=True, on_step=True)
+
         # For newer pl versions:
-#         # Log epoch validation IOU
-#         self.log("val_loss", epoch_iou, on_epoch=True, prog_bar=True)
-        result = pl.EvalResult(checkpoint_on=epoch_iou, early_stop_on=epoch_iou)
-        result.log('val_loss', epoch_iou, prog_bar=True, on_step=True)
-        return result
+        # Log epoch validation IOU
+        self.log("val_loss", epoch_iou, on_epoch=True, prog_bar=True, logger=True)
+
+        return epoch_iou
 
     ## Convenience Methods ##
 
@@ -227,30 +234,30 @@ class FloodModel(pl.LightningModule):
     def _get_trainer_params(self):
         # Define callback behavior
         checkpoint_callback = ModelCheckpoint(
-            filepath=self.output_path,
-            monitor="checkpoint_on",
+            dirpath=self.output_path,
+            monitor="val_iou",
             mode="max",
             verbose=True,
         )
-#         early_stop_callback = EarlyStopping(
-#             monitor="val_loss",
-#             patience=(self.patience * 3),
-#             mode="max",
-#             verbose=True,
-#         )
+        early_stop_callback = EarlyStopping(
+            monitor="val_iou",
+            patience=(self.patience * 3),
+            mode="max",
+            verbose=True,
+        )
 
         # Specify where Tensorboard logs will be saved
         self.log_path = Path.cwd() / self.hparams.get("log_path", "tensorboard-logs")
         self.log_path.mkdir(exist_ok=True)
-        tb_logger = TensorBoardLogger(self.log_path, name="benchmark-model")
-
+        logger = TensorBoardLogger(self.log_path, name="benchmark-model")
+        wandb_logger = WandbLogger(project="Driven-Data-Floodwater-Mapping", entity="effective-altruism-techs")
+        
         trainer_params = {
-#             "early_stop_callback": early_stop_callback,
-            "checkpoint_callback": checkpoint_callback,
+            "callbacks": [checkpoint_callback, early_stop_callback],
             "max_epochs": self.max_epochs,
             "min_epochs": self.min_epochs,
             "default_root_dir": self.output_path,
-            "logger": tb_logger,
+            "logger": [logger, wandb_logger],
             "gpus": 1,
             "fast_dev_run": self.hparams.get("fast_dev_run", False),
             "num_sanity_val_steps": self.hparams.get("val_sanity_checks", 0),
