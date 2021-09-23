@@ -6,11 +6,15 @@ import torch.nn as nn
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer
 from pytorch_lightning import seed_everything
+import wandb
 
 from model import FloodModel
 
 
 if __name__ =='__main__':
+    
+    wandb.login() # This will look for WANDB_API_KEY env variable provided by secrets.env
+    wandb.init(project="Driven-Data-Floodwater-Mapping", entity="effective-altruism-techs")
 
     parser = argparse.ArgumentParser()
 
@@ -101,3 +105,5 @@ if __name__ =='__main__':
     # After model has been trained, save its state into model_dir which is then copied to back S3
     with open(os.path.join(args.model_dir, 'model_1.pth'), 'wb') as f:
         torch.save(ss_flood_model.state_dict(), f)
+        
+    wandb.finish()
