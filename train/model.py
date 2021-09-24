@@ -216,7 +216,7 @@ class FloodModel(pl.LightningModule):
 
         # For newer pl versions:
         # Log epoch validation IOU
-        self.log("val_loss", epoch_iou, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val_iou", epoch_iou, on_epoch=True, prog_bar=True, logger=True)
 
         return epoch_iou
 
