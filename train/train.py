@@ -7,6 +7,7 @@ import pytorch_lightning as pl
 from pytorch_lightning import Trainer
 from pytorch_lightning import seed_everything
 import wandb
+from datetime import datetime
 
 from model import FloodModel
 
@@ -21,7 +22,8 @@ if __name__ =='__main__':
 
     # our hyperparameters all in a hparams dictionary
     parser.add_argument('--hparams', type=dict, default={
-        # Optional hparams
+        # Optional hparams, set these in the hparams dictionary in the main notebook before training
+        "architecture": "Unet"
         "backbone": "resnet34",
         "weights": "imagenet",
         "lr": 1e-3,
@@ -38,6 +40,7 @@ if __name__ =='__main__':
     })
     
     # hyperparameters sent by the client are passed as command-line arguments to the script.
+    parser.add_argument('--architecture', type=str, default='Unet')
     parser.add_argument('--gpus', type=int, default=1) # could be used for multi-GPU as well
     parser.add_argument('--backbone', type=str, default='resnet34')
     parser.add_argument('--weights', type=str, default="imagenet")
@@ -102,9 +105,12 @@ if __name__ =='__main__':
     
     # Runs model training 
     ss_flood_model.fit() # orchestrates our model training
-
+    
+    now = datetime.now() # current date and time
+    date_time = now.strftime("%Y-%m-%d-%H-%M-%S")
+    
     # After model has been trained, save its state into model_dir which is then copied to back S3
-    with open(os.path.join(args.model_dir, 'model_unet_resnet34_1.pth'), 'wb') as f:
+    with open(os.path.join(args.model_dir, f'model_{hparams.architecture}_{hparams.backbone}_{date_time}.pth'), 'wb') as f:
         torch.save(ss_flood_model.state_dict(), f)
         
 #     wandb.finish()
