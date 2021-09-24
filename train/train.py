@@ -110,7 +110,7 @@ if __name__ =='__main__':
     date_time = now.strftime("%Y-%m-%d-%H-%M-%S")
     
     # After model has been trained, save its state into model_dir which is then copied to back S3
-    with open(os.path.join(args.model_dir, f'model_{hparams.architecture}_{hparams.backbone}_{date_time}.pth'), 'wb') as f:
+    with open(os.path.join(args.model_dir, f'model_{hparams['architecture']}_{hparams['backbone']}_{date_time}.pth'), 'wb') as f:
         torch.save(ss_flood_model.state_dict(), f)
         
 #     wandb.finish()
