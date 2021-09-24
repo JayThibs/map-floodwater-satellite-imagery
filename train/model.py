@@ -241,12 +241,17 @@ class FloodModel(pl.LightningModule):
             mode="max",
             verbose=True,
         )
+        # removing early stopping, but could later add to callback argument in trainer_params
         early_stop_callback = EarlyStopping(
             monitor="val_iou",
             patience=(self.patience * 3),
             mode="max",
             verbose=True,
         )
+        
+        # Removing for now since it causes a recursion error
+#         multiplicative = lambda epoch: 1.1
+#         backbone_finetuning = BackboneFinetuning(5, multiplicative)
 
         # Specify where Tensorboard logs will be saved
         self.log_path = Path.cwd() / self.hparams.get("log_path", "tensorboard-logs")
@@ -255,7 +260,7 @@ class FloodModel(pl.LightningModule):
 #         wandb_logger = WandbLogger(project="Driven-Data-Floodwater-Mapping", entity="effective-altruism-techs")
         
         trainer_params = {
-            "callbacks": [checkpoint_callback, early_stop_callback],
+            "callbacks": checkpoint_callback,
             "max_epochs": self.max_epochs,
             "min_epochs": self.min_epochs,
             "default_root_dir": self.output_path,

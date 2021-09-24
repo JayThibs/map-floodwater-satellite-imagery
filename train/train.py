@@ -109,8 +109,12 @@ if __name__ =='__main__':
     now = datetime.now() # current date and time
     date_time = now.strftime("%Y-%m-%d-%H-%M-%S")
     
+    # architecture and backbone names
+    architecture_name = hparams['architecture']
+    backbone_name = hparams['backbone']
+    
     # After model has been trained, save its state into model_dir which is then copied to back S3
-    with open(os.path.join(args.model_dir, f'model_{hparams.architecture}_{hparams.backbone}_{date_time}.pth'), 'wb') as f:
+    with open(os.path.join(args.model_dir, f'model_{architecture_name}_{backbone_name}_{date_time}.pth'), 'wb') as f:
         torch.save(ss_flood_model.state_dict(), f)
         
 #     wandb.finish()
