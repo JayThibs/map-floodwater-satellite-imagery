@@ -6,11 +6,16 @@ import torch.nn as nn
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer
 from pytorch_lightning import seed_everything
+import wandb
 
 from model import FloodModel
 
 
 if __name__ =='__main__':
+    
+    # Removing this for Udacity, but useful for further usage
+#     wandb.login() # This will look for WANDB_API_KEY env variable provided by secrets.env
+#     wandb.init(project="Driven-Data-Floodwater-Mapping", entity="effective-altruism-techs")
 
     parser = argparse.ArgumentParser()
 
@@ -21,7 +26,7 @@ if __name__ =='__main__':
         "weights": "imagenet",
         "lr": 1e-3,
         "min_epochs": 6,
-        "max_epochs": 1000,
+        "max_epochs": 30,
         "patience": 4,
         "batch_size": 32,
         "num_workers": 0,
@@ -38,7 +43,7 @@ if __name__ =='__main__':
     parser.add_argument('--weights', type=str, default="imagenet")
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--min_epochs', type=int, default=6)
-    parser.add_argument('--max_epochs', type=int, default=1000)
+    parser.add_argument('--max_epochs', type=int, default=30)
     parser.add_argument('--patience', type=int, default=4)
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--num_workers', type=int, default=0)
@@ -85,6 +90,8 @@ if __name__ =='__main__':
     hparams = args.hparams
     hparams.update(data_dict)
     
+    print(hparams)
+    
 #     # Now we have all parameters and hyperparameters available and we need to match them with sagemaker 
 #     # structure. default_root_dir is set to out_put_data_dir to retrieve from training instances all the 
 #     # checkpoint and intermediary data produced by lightning
@@ -97,5 +104,7 @@ if __name__ =='__main__':
     ss_flood_model.fit() # orchestrates our model training
 
     # After model has been trained, save its state into model_dir which is then copied to back S3
-    with open(os.path.join(args.model_dir, 'model_1.pth'), 'wb') as f:
+    with open(os.path.join(args.model_dir, 'model_unet_resnet34_1.pth'), 'wb') as f:
         torch.save(ss_flood_model.state_dict(), f)
+        
+#     wandb.finish()
