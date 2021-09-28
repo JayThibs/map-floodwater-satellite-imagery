@@ -40,6 +40,7 @@ class FloodModel(pl.LightningModule):
         super(FloodModel, self).__init__()
         self.hparams.update(hparams)
         self.save_hyperparameters()
+        self.architecture = self.hparams.get("architecture", "Unet")
         self.backbone = self.hparams.get("backbone", "resnet34")
         self.weights = self.hparams.get("weights", "imagenet")
         self.lr = self.hparams.get("lr", 1e-3)
@@ -223,15 +224,16 @@ class FloodModel(pl.LightningModule):
     ## Convenience Methods ##
 
     def _prepare_model(self):
-        unet_model = smp.Unet(
-           encoder_name = self.backbone,
+        cls = getattr(smp, self.architecture)
+        model = cls(
+           encoder_name=self.backbone,
            encoder_weights=self.weights,
            in_channels=2,
            classes=2,
         )
         if self.gpus:
-            unet_model.cuda()
-        return unet_model
+            model.cuda()
+        return model
 
     def _get_trainer_params(self):
         # Define callback behavior
@@ -241,7 +243,6 @@ class FloodModel(pl.LightningModule):
             mode="max",
             verbose=True,
         )
-        # removing early stopping, but could later add to callback argument in trainer_params
         early_stop_callback = EarlyStopping(
             monitor="val_iou",
             patience=(self.patience * 3),
@@ -260,7 +261,7 @@ class FloodModel(pl.LightningModule):
 #         wandb_logger = WandbLogger(project="Driven-Data-Floodwater-Mapping", entity="effective-altruism-techs")
         
         trainer_params = {
-            "callbacks": checkpoint_callback,
+            "callbacks": [checkpoint_callback, early_stop_callback],
             "max_epochs": self.max_epochs,
             "min_epochs": self.min_epochs,
             "default_root_dir": self.output_path,
