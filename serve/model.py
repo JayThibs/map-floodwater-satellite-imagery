@@ -32,7 +32,7 @@ class FloodModel(pl.LightningModule):
     def __init__(self):
         super().__init__()
         
-        self.backbone = self.hparams.get("backbone", "resnet34")
+        self.backbone = self.hparams.get("backbone", "resnet50")
         cls = getattr(smp, self.architecture)
         self.model = cls(
            encoder_name=self.backbone,
