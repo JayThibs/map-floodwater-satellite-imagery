@@ -24,7 +24,7 @@ if __name__ =='__main__':
     parser.add_argument('--hparams', type=dict, default={
         # Optional hparams, set these in the hparams dictionary in the main notebook before training
         "architecture": "Unet",
-        "backbone": "resnet50",
+        "backbone": "resnet34",
         "weights": "imagenet",
         "lr": 1e-3,
         "min_epochs": 6,

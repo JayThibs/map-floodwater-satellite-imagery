@@ -41,7 +41,7 @@ class FloodModel(pl.LightningModule):
         self.hparams.update(hparams)
         self.save_hyperparameters()
         self.architecture = self.hparams.get("architecture", "Unet")
-        self.backbone = self.hparams.get("backbone", "resnet50")
+        self.backbone = self.hparams.get("backbone", "resnet34")
         self.weights = self.hparams.get("weights", "imagenet")
         self.lr = self.hparams.get("lr", 1e-3)
         self.max_epochs = self.hparams.get("max_epochs", 30)
@@ -157,7 +157,7 @@ class FloodModel(pl.LightningModule):
 #         result.log('val_loss', batch_iou, prog_bar=True, on_step=True)
         
         # Log batch IOU
-        batch_iou = intersection.float() / union.float()
+        batch_iou = intersection / union
 #         For newer pl versions:
         self.log(
             "iou", batch_iou, on_step=True, on_epoch=True, prog_bar=True, logger=True
@@ -205,7 +205,7 @@ class FloodModel(pl.LightningModule):
         # Calculate IOU at the end of epoch
         intersection = self.intersection
         union = self.union
-        epoch_iou = intersection.float() / union.float()
+        epoch_iou = intersection / union
 
         # Reset metrics before next epoch
         self.intersection = 0
