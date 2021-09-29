@@ -21,257 +21,54 @@ from loss_functions import XEDiceLoss
 
 from dataset import FloodDataset
 
-
-# These transformations will be passed to our model class
-training_transformations = album.Compose(
-    [
-     album.RandomCrop(256, 256),
-     album.RandomRotate90(),
-     album.HorizontalFlip(),
-     album.VerticalFlip(),
-     album.RandomBrightness(),
-     album.RandomBrightnessContrast()
-    ]
-)
+import numpy as np
+import pytorch_lightning as pl
+import rasterio
+import segmentation_models_pytorch as smp
+import torch
 
 
 class FloodModel(pl.LightningModule):
-    def __init__(self, hparams):
-        super(FloodModel, self).__init__()
-        self.hparams.update(hparams)
-        self.save_hyperparameters()
-        self.backbone = self.hparams.get("backbone", "resnet34")
-        self.weights = self.hparams.get("weights", "imagenet")
-        self.lr = self.hparams.get("lr", 1e-3)
-        self.max_epochs = self.hparams.get("max_epochs", 30)
-        self.min_epochs = self.hparams.get("min_epochs", 6)
-        self.patience = self.hparams.get("patience", 4)
-        self.num_workers = self.hparams.get("num_workers", 2)
-        self.batch_size = self.hparams.get("batch_size", 32)
-        self.x_train = self.hparams.get("x_train")
-        self.y_train = self.hparams.get("y_train")
-        self.x_val = self.hparams.get("x_val")
-        self.y_val = self.hparams.get("y_val")
-        self.output_path = self.hparams.get("output_path", "model-outputs")
-        self.gpus = self.hparams.get("gpus", False)
-        self.transform = training_transformations
-
-        # Where final model will be saved
-        self.output_path = Path.cwd() / self.output_path
-        self.output_path.mkdir(exist_ok=True)
-
-        # Track validation IOU globally (reset each epoch)
-        self.intersection = 0
-        self.union = 0
-
-        # Instantiate datasets, model, and trainer params
-        self.train_dataset = FloodDataset(
-            self.x_train, self.y_train, transforms=self.transform
+    def __init__(self):
+        super().__init__()
+        
+        self.backbone = self.hparams.get("backbone", "resnet50")
+        cls = getattr(smp, self.architecture)
+        self.model = cls(
+           encoder_name=self.backbone,
+           encoder_weights=None,
+           in_channels=2,
+           classes=2,
         )
-        self.val_dataset = FloodDataset(self.x_val, self.y_val, transforms=None)
-        self.model = self._prepare_model()
-        self.trainer_params = self._get_trainer_params()
-
-    # Required LightningModule methods
 
     def forward(self, image):
-        # Forward pass through the network
+        # Forward pass
         return self.model(image)
 
-    def training_step(self, batch, batch_idx):
-        # Swtich on training mode
-        self.model.train()
-        torch.set_grad_enabled(True)
-
-        # Load images and labels
-        x = batch["chip"]
-        y = batch["label"].long()
-
-        if self.gpus:
-            x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
-
-        # Forward pass
-        preds = self.forward(x)
-        
-#         print('training_step checking preds and y')
-#         print(preds)
-#         print(type(preds))
-#         print(y)
-#         print(type(y))
-        
-        # Calculate training loss
-        criterion = XEDiceLoss()
-        xe_dice_loss = criterion(preds, y)
-        
-        # For 0.9.0 pl:
-#         # Logs training loss
-#         logs = {'train_loss': xe_dice_loss}
-        
-#         output = {
-#             # This is required in training to be used by backpropagation
-#             'loss': xe_dice_loss,
-#             # This is optional for logging pourposes
-#             'log': logs
-#         }
-
-#         result = pl.TrainResult(minimize=xe_dice_loss)
-#         result.log('loss', xe_dice_loss)
-    
-        # For newer pl versions:
-        # Log batch xe_dice_loss
-        self.log(
-            "xe_dice_loss",
-            xe_dice_loss,
-            on_step=True,
-            on_epoch=True,
-            prog_bar=True,
-            logger=True
-        )
-
-        return xe_dice_loss
-
-    def validation_step(self, batch, batch_idx):
+    def predict(self, vv_path, vh_path):
         # Switch on evaluation mode
         self.model.eval()
         torch.set_grad_enabled(False)
 
-        # Load images and labels
-        x = batch["chip"]
-        y = batch["label"].long()
-        if self.gpus:
-            x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
+        # Create a 2-channel image
+        with rasterio.open(vv_path) as vv:
+            vv_img = vv.read(1)
+        with rasterio.open(vh_path) as vh:
+            vh_img = vh.read(1)
+        x_arr = np.stack([vv_img, vh_img], axis=-1)
 
-        # Forward pass & softmax
-        preds = self.forward(x)
+        # Min-max normalization
+        min_norm = -77
+        max_norm = 26
+        x_arr = np.clip(x_arr, min_norm, max_norm)
+        x_arr = (x_arr - min_norm) / (max_norm - min_norm)
+
+        # Transpose
+        x_arr = np.transpose(x_arr, [2, 0, 1])
+        x_arr = np.expand_dims(x_arr, axis=0)
+
+        # Perform inference
+        preds = self.forward(torch.from_numpy(x_arr))
         preds = torch.softmax(preds, dim=1)[:, 1]
         preds = (preds > 0.5) * 1
-
-        # Calculate validation IOU (global)
-        intersection, union = intersection_and_union(preds, y)
-        self.intersection += intersection
-        self.union += union
-        
-        # For 0.9.0 pl:
-#         result = pl.EvalResult(checkpoint_on=batch_iou)
-#         result.log('val_loss', batch_iou, prog_bar=True, on_step=True)
-        
-        # Log batch IOU
-        batch_iou = intersection.float() / union.float()
-#         For newer pl versions:
-        self.log(
-            "iou", batch_iou, on_step=True, on_epoch=True, prog_bar=True, logger=True
-        )
-
-        return batch_iou
-
-    def train_dataloader(self):
-        # DataLoader class for training
-        return DataLoader(
-            self.train_dataset,
-            batch_size=self.batch_size,
-            num_workers=self.num_workers,
-            shuffle=True,
-            pin_memory=True,
-        )
-
-    def val_dataloader(self):
-        # DataLoader class for training
-        return DataLoader(
-            self.val_dataset,
-            batch_size=self.batch_size,
-            num_workers=0,
-            shuffle=False,
-            pin_memory=True,
-        )
-
-    def configure_optimizers(self):
-        # Define optimizer
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
-
-        # Define Scheduler
-        scheduler = lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode='max', factor=0.5, patience=self.patience
-        )
-
-        scheduler = {
-            "scheduler": scheduler,
-            "interval": "epoch",
-            "monitor": "val_iou",
-        } # logged value to monitor
-        return [optimizer], [scheduler]
-
-    def validation_epoch_end(self, outputs):
-        # Calculate IOU at the end of epoch
-        intersection = self.intersection
-        union = self.union
-        epoch_iou = intersection.float() / union.float()
-
-        # Reset metrics before next epoch
-        self.intersection = 0
-        self.union = 0
-
-        # For 0.9.0 pl:
-#         result = pl.EvalResult(checkpoint_on=epoch_iou, early_stop_on=epoch_iou)
-#         result.log('val_loss', epoch_iou, prog_bar=True, on_step=True)
-
-        # For newer pl versions:
-        # Log epoch validation IOU
-        self.log("val_iou", epoch_iou, on_epoch=True, prog_bar=True, logger=True)
-
-        return epoch_iou
-
-    ## Convenience Methods ##
-
-    def _prepare_model(self):
-        unet_model = smp.Unet(
-           encoder_name = self.backbone,
-           encoder_weights=self.weights,
-           in_channels=2,
-           classes=2,
-        )
-        if self.gpus:
-            unet_model.cuda()
-        return unet_model
-
-    def _get_trainer_params(self):
-        # Define callback behavior
-        checkpoint_callback = ModelCheckpoint(
-            dirpath=self.output_path,
-            monitor="val_iou",
-            mode="max",
-            verbose=True,
-        )
-        # removing early stopping, but could later add to callback argument in trainer_params
-        early_stop_callback = EarlyStopping(
-            monitor="val_iou",
-            patience=(self.patience * 3),
-            mode="max",
-            verbose=True,
-        )
-        
-        # Removing for now since it causes a recursion error
-#         multiplicative = lambda epoch: 1.1
-#         backbone_finetuning = BackboneFinetuning(5, multiplicative)
-
-        # Specify where Tensorboard logs will be saved
-        self.log_path = Path.cwd() / self.hparams.get("log_path", "tensorboard-logs")
-        self.log_path.mkdir(exist_ok=True)
-        logger = TensorBoardLogger(self.log_path, name="resnet-model")
-#         wandb_logger = WandbLogger(project="Driven-Data-Floodwater-Mapping", entity="effective-altruism-techs")
-        
-        trainer_params = {
-            "callbacks": checkpoint_callback,
-            "max_epochs": self.max_epochs,
-            "min_epochs": self.min_epochs,
-            "default_root_dir": self.output_path,
-            "logger": logger,
-            "gpus": 1,
-            "fast_dev_run": self.hparams.get("fast_dev_run", False),
-            "num_sanity_val_steps": self.hparams.get("val_sanity_checks", 0),
-        }
-        return trainer_params
-
-    def fit(self):
-        # Set up and fit Trainer object
-        self.trainer = pl.Trainer(**self.trainer_params)
-        self.trainer.fit(self)
+        return preds.detach().numpy().squeeze().squeeze()
