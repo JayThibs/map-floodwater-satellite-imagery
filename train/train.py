@@ -39,20 +39,22 @@ if __name__ =='__main__':
         "gpu": 1,
     })
     
-    # hyperparameters sent by the client are passed as command-line arguments to the script.
-    parser.add_argument('--architecture', type=str, default='Unet')
-    parser.add_argument('--gpus', type=int, default=1) # could be used for multi-GPU as well
-    parser.add_argument('--backbone', type=str, default='resnet34')
-    parser.add_argument('--weights', type=str, default="imagenet")
-    parser.add_argument('--lr', type=float, default=1e-3)
-    parser.add_argument('--min_epochs', type=int, default=6)
-    parser.add_argument('--max_epochs', type=int, default=30)
-    parser.add_argument('--patience', type=int, default=4)
-    parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--num_workers', type=int, default=0)
-    parser.add_argument('--val_sanity_checks', type=int, default=0)
-    parser.add_argument('--fast_dev_run', type=bool, default=False)
-    parser.add_argument('--log_path', type=str, default="tensorboard_logs")
+    # no need for the args below for hyperparameter tuning.
+    
+#     # hyperparameters sent by the client are passed as command-line arguments to the script.
+#     parser.add_argument('--architecture', type=str, default='Unet')
+#     parser.add_argument('--gpus', type=int, default=1) # could be used for multi-GPU as well
+#     parser.add_argument('--backbone', type=str, default='resnet34')
+#     parser.add_argument('--weights', type=str, default="imagenet")
+#     parser.add_argument('--lr', type=float, default=1e-3)
+#     parser.add_argument('--min_epochs', type=int, default=6)
+#     parser.add_argument('--max_epochs', type=int, default=30)
+#     parser.add_argument('--patience', type=int, default=4)
+#     parser.add_argument('--batch_size', type=int, default=32)
+#     parser.add_argument('--num_workers', type=int, default=0)
+#     parser.add_argument('--val_sanity_checks', type=int, default=0)
+#     parser.add_argument('--fast_dev_run', type=bool, default=False)
+#     parser.add_argument('--log_path', type=str, default="tensorboard_logs")
 
     # Data, model, and output directories. Passed by sagemaker with default to os env variables
     parser.add_argument('-o','--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
