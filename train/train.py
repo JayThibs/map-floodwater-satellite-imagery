@@ -116,7 +116,7 @@ if __name__ =='__main__':
     backbone_name = hparams['backbone']
     
     # After model has been trained, save its state into model_dir which is then copied to back S3
-    with open(os.path.join(args.model_dir, f'model_{architecture_name}_{backbone_name}_{date_time}.pth'), 'wb') as f:
+    with open(os.path.join(args.model_dir, 'model.pth'), 'wb') as f:
         torch.save(ss_flood_model.state_dict(), f)
         
 #     wandb.finish()
