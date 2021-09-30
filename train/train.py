@@ -24,7 +24,7 @@ if __name__ =='__main__':
     parser.add_argument('--hparams', type=dict, default={
         # Optional hparams, set these in the hparams dictionary in the main notebook before training
         "architecture": "Unet",
-        "backbone": "resnet50",
+        "backbone": "resnet34",
         "weights": "imagenet",
         "lr": 1e-3,
         "min_epochs": 6,
@@ -39,20 +39,22 @@ if __name__ =='__main__':
         "gpu": 1,
     })
     
-    # hyperparameters sent by the client are passed as command-line arguments to the script.
-    parser.add_argument('--architecture', type=str, default='Unet')
-    parser.add_argument('--gpus', type=int, default=1) # could be used for multi-GPU as well
-    parser.add_argument('--backbone', type=str, default='resnet34')
-    parser.add_argument('--weights', type=str, default="imagenet")
-    parser.add_argument('--lr', type=float, default=1e-3)
-    parser.add_argument('--min_epochs', type=int, default=6)
-    parser.add_argument('--max_epochs', type=int, default=30)
-    parser.add_argument('--patience', type=int, default=4)
-    parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--num_workers', type=int, default=0)
-    parser.add_argument('--val_sanity_checks', type=int, default=0)
-    parser.add_argument('--fast_dev_run', type=bool, default=False)
-    parser.add_argument('--log_path', type=str, default="tensorboard_logs")
+    # no need for the args below for hyperparameter tuning.
+    
+#     # hyperparameters sent by the client are passed as command-line arguments to the script.
+#     parser.add_argument('--architecture', type=str, default='Unet')
+#     parser.add_argument('--gpus', type=int, default=1) # could be used for multi-GPU as well
+#     parser.add_argument('--backbone', type=str, default='resnet34')
+#     parser.add_argument('--weights', type=str, default="imagenet")
+#     parser.add_argument('--lr', type=float, default=1e-3)
+#     parser.add_argument('--min_epochs', type=int, default=6)
+#     parser.add_argument('--max_epochs', type=int, default=30)
+#     parser.add_argument('--patience', type=int, default=4)
+#     parser.add_argument('--batch_size', type=int, default=32)
+#     parser.add_argument('--num_workers', type=int, default=0)
+#     parser.add_argument('--val_sanity_checks', type=int, default=0)
+#     parser.add_argument('--fast_dev_run', type=bool, default=False)
+#     parser.add_argument('--log_path', type=str, default="tensorboard_logs")
 
     # Data, model, and output directories. Passed by sagemaker with default to os env variables
     parser.add_argument('-o','--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
@@ -114,7 +116,7 @@ if __name__ =='__main__':
     backbone_name = hparams['backbone']
     
     # After model has been trained, save its state into model_dir which is then copied to back S3
-    with open(os.path.join(args.model_dir, f'model_{architecture_name}_{backbone_name}_{date_time}.pth'), 'wb') as f:
+    with open(os.path.join(args.model_dir, 'model.pth'), 'wb') as f:
         torch.save(ss_flood_model.state_dict(), f)
         
 #     wandb.finish()

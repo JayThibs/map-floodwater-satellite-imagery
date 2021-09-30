@@ -1,7 +1,8 @@
 import json
 import torch
+import numpy as np
 
-from train import FloodModel
+from model import FloodModel
 
 
 def model_fn(model_dir):
@@ -12,20 +13,17 @@ def model_fn(model_dir):
 
 def input_fn(request_body, request_content_type):
     assert request_content_type=='application/json'
-    data = json.loads(request_body)['inputs']
-    data = torch.tensor(data, dtype=torch.float32, device=device)
+    data = json.loads(request_body)
     return data
 
 
-def predict_fn(input_object, model):
+def predict_fn(data, model):
     with torch.no_grad():
-        prediction = model(input_object)
+        prediction = model.predict(data)
     return prediction
 
 
 def output_fn(predictions, content_type):
     assert content_type == 'application/json'
-    res = predictions.cpu().numpy().tolist()
+    res = predictions.astype(np.uint8)
     return json.dumps(res)
-
-
