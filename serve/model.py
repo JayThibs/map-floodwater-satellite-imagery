@@ -2,12 +2,13 @@ import numpy as np
 import torch
 import pytorch_lightning as pl
 import segmentation_models_pytorch as smp
+import os
 
 class FloodModel(pl.LightningModule):
     def __init__(self):
         super().__init__()
-        
-        self.backbone = self.hparams.get("backbone", "resnet50")
+        self.architecture = os.environ('MODEL_ARCHITECTURE')
+        self.backbone = self.hparams.get("backbone", "resnet34")
         cls = getattr(smp, self.architecture)
         self.model = cls(
            encoder_name=self.backbone,
