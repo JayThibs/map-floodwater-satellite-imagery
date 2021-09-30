@@ -12,6 +12,8 @@ st.subheader("Upload the vv and vh Polarization Images")
 uploaded_files = st.file_uploader(" ", accept_multiple_files=True)
 print("Uploaded file:", uploaded_files)
 
+x_arr = None
+
 if len(uploaded_files) == 2:
     print(uploaded_files)
     with rasterio.open(uploaded_files[0]) as vv:
