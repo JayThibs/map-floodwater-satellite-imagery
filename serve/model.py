@@ -4,11 +4,13 @@ import pytorch_lightning as pl
 import segmentation_models_pytorch as smp
 import os
 
+pl.seed_everything(3407)
+
 class FloodModel(pl.LightningModule):
     def __init__(self):
         super().__init__()
         print("Instantiating model...")
-        self.architecture = os.environ('MODEL_ARCHITECTURE')
+        self.architecture = os.environ['MODEL_ARCHITECTURE']
         self.backbone = self.hparams.get("backbone", "resnet34")
         cls = getattr(smp, self.architecture)
         self.model = cls(
