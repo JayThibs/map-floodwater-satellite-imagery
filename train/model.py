@@ -89,8 +89,8 @@ class FloodModel(pl.LightningModule):
         # Load images and labels
         x = batch["chip"]
         y = batch["label"].long()
-#         if self.gpus:
-#             x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
+        if self.gpus:
+            x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
 
         
         # Forward pass
@@ -141,8 +141,8 @@ class FloodModel(pl.LightningModule):
         # Load images and labels
         x = batch["chip"]
         y = batch["label"].long()
-#         if self.gpus:
-#             x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
+        if self.gpus:
+            x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
 
         # Forward pass & softmax
         preds = self.forward(x)
@@ -232,8 +232,8 @@ class FloodModel(pl.LightningModule):
            in_channels=2,
            classes=2,
         )
-#         if self.gpus:
-#             model.cuda()
+        if self.gpus:
+            model.cuda()
         return model
 
     def _get_trainer_params(self):

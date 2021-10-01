@@ -19,25 +19,19 @@ if __name__ =='__main__':
 #     wandb.init(project="Driven-Data-Floodwater-Mapping", entity="effective-altruism-techs")
 
     parser = argparse.ArgumentParser()
-
-    hparams = os.environ['SM_HPS']
     
-    # no need for the args below for hyperparameter tuning.
-    
-#     # hyperparameters sent by the client are passed as command-line arguments to the script.
-#     parser.add_argument('--architecture', type=str, default='Unet')
-#     parser.add_argument('--gpus', type=int, default=1) # could be used for multi-GPU as well
-#     parser.add_argument('--backbone', type=str, default='resnet34')
-#     parser.add_argument('--weights', type=str, default="imagenet")
-#     parser.add_argument('--lr', type=float, default=1e-3)
-#     parser.add_argument('--min_epochs', type=int, default=6)
-#     parser.add_argument('--max_epochs', type=int, default=30)
-#     parser.add_argument('--patience', type=int, default=4)
-#     parser.add_argument('--batch_size', type=int, default=32)
-#     parser.add_argument('--num_workers', type=int, default=0)
-#     parser.add_argument('--val_sanity_checks', type=int, default=0)
-#     parser.add_argument('--fast_dev_run', type=bool, default=False)
-#     parser.add_argument('--log_path', type=str, default="tensorboard_logs")
+    # hyperparameters sent by the client are passed as command-line arguments to the script.
+    parser.add_argument('--architecture', type=str, default=os.environ['SM_HP_ARCHITECTURE'])
+    parser.add_argument('--backbone', type=str, default=os.environ['SM_HP_BACKBONE'])
+    parser.add_argument('--weights', type=str, default=os.environ['SM_HP_WEIGHTS'])
+    parser.add_argument('--lr', type=float, default=os.environ['SM_HP_LR'])
+    parser.add_argument('--min_epochs', type=int, default=os.environ['SM_HP_MIN_EPOCHS'])
+    parser.add_argument('--max_epochs', type=int, default=os.environ['SM_HP_MAX_EPOCHS'])
+    parser.add_argument('--patience', type=int, default=os.environ['SM_HP_PATIENCE'])
+    parser.add_argument('--batch_size', type=int, default=os.environ['SM_HP_BATCH_SIZE'])
+    parser.add_argument('--num_workers', type=int, default=os.environ['SM_HP_NUM_WORKERS'])
+    parser.add_argument('--val_sanity_checks', type=int, default=os.environ['SM_HP_VAL_SANITY_CHECKS'])
+    parser.add_argument('--log_path', type=str, default=os.environ["SM_HP_LOG_PATH"])
 
     # Data, model, and output directories. Passed by sagemaker with default to os env variables
     parser.add_argument('-o','--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
@@ -75,9 +69,24 @@ if __name__ =='__main__':
         "y_val": val_y,
     }
     
-    hparams = args.hparams
+    hparams = {
+        # Optional hparams, set these in the hparams dictionary in the main notebook before training
+        "architecture": args.architecture,
+        "backbone": args.backbone,
+        "weights": args.weights,
+        "lr": args.lr,
+        "min_epochs": args.min_epochs,
+        "max_epochs": args.max_epochs,
+        "patience": args.patience,
+        "batch_size": args.batch_size,
+        "num_workers": args.num_workers,
+        "val_sanity_checks": args.val_sanity_checks,
+        "fast_dev_run": False,
+        "output_path": "model-outputs",
+        "log_path": "tensorboard_logs",
+        "gpu": True,
+    }
     hparams.update(data_dict)
-    
     print(hparams)
     
     available_gpus = torch.cuda.is_available()
