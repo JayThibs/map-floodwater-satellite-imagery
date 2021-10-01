@@ -21,8 +21,6 @@ from loss_functions import XEDiceLoss
 
 from dataset import FloodDataset
 
-pl.seed_everything(3407)
-
 # These transformations will be passed to our model class
 training_transformations = album.Compose(
     [
@@ -42,6 +40,7 @@ class FloodModel(pl.LightningModule):
         self.hparams.update(hparams)
         self.save_hyperparameters()
         self.architecture = self.hparams.get("architecture", "Unet")
+        print(self.architecture)
         self.backbone = self.hparams.get("backbone", "resnet34")
         self.weights = self.hparams.get("weights", "imagenet")
         self.lr = self.hparams.get("lr", 1e-3)
@@ -49,6 +48,7 @@ class FloodModel(pl.LightningModule):
         self.min_epochs = self.hparams.get("min_epochs", 6)
         self.patience = self.hparams.get("patience", 4)
         self.num_workers = self.hparams.get("num_workers", 2)
+        print(self.num_workers)
         self.batch_size = self.hparams.get("batch_size", 32)
         self.x_train = self.hparams.get("x_train")
         self.y_train = self.hparams.get("y_train")
@@ -56,6 +56,7 @@ class FloodModel(pl.LightningModule):
         self.y_val = self.hparams.get("y_val")
         self.output_path = self.hparams.get("output_path", "model-outputs")
         self.gpus = self.hparams.get("gpus", False)
+        print(self.gpus)
         self.transform = training_transformations
 
         # Where final model will be saved
@@ -88,7 +89,6 @@ class FloodModel(pl.LightningModule):
         # Load images and labels
         x = batch["chip"]
         y = batch["label"].long()
-
         if self.gpus:
             x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
 
