@@ -22,6 +22,7 @@ class XEDiceLoss(nn.Module):
         # Cross-entropy loss
         temp_true = torch.where((true == 255), 0, true) # cast 255 to 0 temporarily
         xe_loss = self.xe(pred, temp_true)
+        xe_loss = xe_loss.type_as(true)
         xe_loss = xe_loss.masked_select(valid_pixel_mask).mean()
 
         # Dice loss

@@ -20,24 +20,7 @@ if __name__ =='__main__':
 
     parser = argparse.ArgumentParser()
 
-    # our hyperparameters all in a hparams dictionary
-    parser.add_argument('--hparams', type=dict, default={
-        # Optional hparams, set these in the hparams dictionary in the main notebook before training
-        "architecture": "Unet",
-        "backbone": "resnet34",
-        "weights": "imagenet",
-        "lr": 1e-3,
-        "min_epochs": 6,
-        "max_epochs": 30,
-        "patience": 4,
-        "batch_size": 32,
-        "num_workers": 2,
-        "val_sanity_checks": 0,
-        "fast_dev_run": False,
-        "output_path": "model-outputs",
-        "log_path": "tensorboard_logs",
-        "gpus": True,
-    })
+    hparams = os.environ['SM_HPS']
     
     # no need for the args below for hyperparameter tuning.
     
