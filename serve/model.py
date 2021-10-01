@@ -4,10 +4,13 @@ import pytorch_lightning as pl
 import segmentation_models_pytorch as smp
 import os
 
+pl.seed_everything(3407)
+
 class FloodModel(pl.LightningModule):
     def __init__(self):
         super().__init__()
-        self.architecture = os.environ('MODEL_ARCHITECTURE')
+        print("Instantiating model...")
+        self.architecture = os.environ['MODEL_ARCHITECTURE']
         self.backbone = self.hparams.get("backbone", "resnet34")
         cls = getattr(smp, self.architecture)
         self.model = cls(
@@ -16,12 +19,15 @@ class FloodModel(pl.LightningModule):
            in_channels=2,
            classes=2,
         )
+        print("Model instantiated.")
 
     def forward(self, image):
         # Forward pass
+        print("Forward pass...")
         return self.model(image)
 
     def predict(self, x_arr):
+        print("Predicting...")
         # Switch on evaluation mode
         self.model.eval()
         torch.set_grad_enabled(False)
@@ -30,4 +36,5 @@ class FloodModel(pl.LightningModule):
         preds = self.forward(torch.from_numpy(x_arr))
         preds = torch.softmax(preds, dim=1)[:, 1]
         preds = (preds > 0.5) * 1
+        print("Finished performing inference.")
         return preds.detach().numpy().squeeze().squeeze()
