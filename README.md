@@ -4,7 +4,7 @@ This repository focuses on training semantic segmentation models to predict the 
 
 ![c2s-sentinel-1](./imgs/c2s-sentinel-1.jpeg)
 
-The focus of this repository is to train and deploy semantic segmentation with SageMaker. For my team's repository of the actual competition, go [here[(https://github.com/JayThibs/map-floodwater-drivendata-competition).
+The focus of this repository is to train and deploy semantic segmentation with SageMaker. For my team's repository of the actual competition, go [here](https://github.com/JayThibs/map-floodwater-drivendata-competition).
 
 You can find the competition page [here](https://www.drivendata.org/competitions/81/detect-flood-water/page/385/).
 
