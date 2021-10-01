@@ -2,7 +2,8 @@ import json
 import torch
 import numpy as np
 import os
-
+from io import BytesIO
+    
 from model import FloodModel
 
 
@@ -35,5 +36,7 @@ def output_fn(predictions, content_type):
     print("Saving prediction for output...")
     assert content_type == 'application/x-npy'
     res = predictions.astype(np.uint8)
+    np_bytes = BytesIO()
+    np.save(np_bytes, res, allow_pickle=True)
     print("Saved prediction, now sending data back to user.")
-    return res
+    return np_bytes
