@@ -31,12 +31,12 @@ if __name__ =='__main__':
         "max_epochs": 30,
         "patience": 4,
         "batch_size": 32,
-        "num_workers": 0,
+        "num_workers": 2,
         "val_sanity_checks": 0,
         "fast_dev_run": False,
         "output_path": "model-outputs",
         "log_path": "tensorboard_logs",
-        "gpu": 1,
+        "gpus": True,
     })
     
     # no need for the args below for hyperparameter tuning.
@@ -96,6 +96,11 @@ if __name__ =='__main__':
     hparams.update(data_dict)
     
     print(hparams)
+    
+    available_gpus = torch.cuda.is_available()
+    
+    print("Is there an available GPU? ", available_gpus)
+    print("Device count: ", torch.cuda.device_count())
     
 #     # Now we have all parameters and hyperparameters available and we need to match them with sagemaker 
 #     # structure. default_root_dir is set to out_put_data_dir to retrieve from training instances all the 
