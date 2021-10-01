@@ -5,7 +5,7 @@ import segmentation_models_pytorch as smp
 import os
 from io import BytesIO
 
-pl.seed_everything(3407)
+pl.seed_everything(9)
 
 class FloodModel(pl.LightningModule):
     def __init__(self):
