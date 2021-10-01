@@ -21,6 +21,7 @@ from loss_functions import XEDiceLoss
 
 from dataset import FloodDataset
 
+pl.seed_everything(3407)
 
 # These transformations will be passed to our model class
 training_transformations = album.Compose(
