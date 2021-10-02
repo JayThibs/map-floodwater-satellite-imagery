@@ -50,5 +50,9 @@ def output_fn(predictions, content_type):
     res = predictions.astype(np.uint8)
     print(type(res))
     print(res)
+    from io import BytesIO
+    np_bytes = BytesIO()
+    np.save(np_bytes, res, allow_pickle=True)
+    print(type(np_bytes))
     print("Saved prediction, now sending data back to user.")
-    return res
+    return np_bytes
