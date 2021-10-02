@@ -20,6 +20,7 @@ def input_fn(request_body, request_content_type):
     print("Accessing data...")
     assert request_content_type == 'application/x-npy'
     print(type(request_body))
+    np_bytes = request_body['data']
     np_bytes = np_bytes.get_value()
     print(type(np_bytes))
     load_bytes = BytesIO(np_bytes)
