@@ -2,7 +2,6 @@ import json
 import torch
 import numpy as np
 import os
-from io import BytesIO
     
 from model import FloodModel
 
@@ -19,7 +18,7 @@ def model_fn(model_dir):
 def input_fn(request_body, request_content_type):
     print("Accessing data...")
     assert request_content_type == 'application/x-npy'
-    data = request_body # this should be a numpy ndarray
+    data = np.array(request_body).reshape(1, 2, 512, 512) # this should be a numpy ndarray
     print("Data has been stored.")
     return data
 
@@ -36,7 +35,5 @@ def output_fn(predictions, content_type):
     print("Saving prediction for output...")
     assert content_type == 'application/x-npy'
     res = predictions.astype(np.uint8)
-    np_bytes = BytesIO()
-    np.save(np_bytes, res, allow_pickle=True)
     print("Saved prediction, now sending data back to user.")
-    return np_bytes
+    return res

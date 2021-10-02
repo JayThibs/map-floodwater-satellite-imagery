@@ -3,7 +3,6 @@ import torch
 import pytorch_lightning as pl
 import segmentation_models_pytorch as smp
 import os
-from io import BytesIO
 
 pl.seed_everything(9)
 
@@ -11,8 +10,8 @@ class FloodModel(pl.LightningModule):
     def __init__(self):
         super().__init__()
         print("Instantiating model...")
-        self.architecture = 'DeepLab' # os.environ['MODEL_ARCHITECTURE']
-        self.backbone = self.hparams.get("backbone", "resnet34")
+        self.architecture = "DeepLabV3" # os.environ['MODEL_ARCHITECTURE']
+        self.backbone = "resnet34"
         cls = getattr(smp, self.architecture)
         self.model = cls(
            encoder_name=self.backbone,
@@ -33,9 +32,8 @@ class FloodModel(pl.LightningModule):
         self.model.eval()
         torch.set_grad_enabled(False)
         
-        # saved with np.save and loading with np.load to preserve shape
-        load_bytes = BytesIO(x_arr) # the numpy array was saved as bytes before sending it for inference
-        x_arr = np.load(load_bytes, allow_pickle=True) # loading data back into the ndarray format
+        # Data sent to endpoint
+        x_arr
 
         # Perform inference
         preds = self.forward(torch.from_numpy(x_arr))
