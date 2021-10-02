@@ -4,6 +4,8 @@ import time
 from streamlit import caching
 import rasterio
 import requests
+import json
+from io import BytesIO
 
 st.title("Floodwater Mapping with SAR Imagery")
 st.markdown("***")
@@ -33,6 +35,7 @@ if len(uploaded_files) == 2:
     x_arr = np.expand_dims(x_arr, axis=0)
 
     print(x_arr)
+    print(x_arr.shape)
 
     st.write("The SAR Imagery is ready to be used in the model!")
 
@@ -45,9 +48,12 @@ else:
 st.subheader("Predict Images")
 
 if x_arr is not None:
-    response = requests.post("http://localhost:5000/predict", json=x_arr)
-    print(response.json())
-    st.write(response.json())
+    st.write("The model is predicting the floodwater areas in the SAR images...")
+    np_bytes = BytesIO()
+    np.save(np_bytes, x_arr, allow_pickle=True)
+    response = requests.post("http://localhost:5000/predict", data=np_bytes)
+    print(response)
+    st.write(response)
 
 
 st.markdown("***")
