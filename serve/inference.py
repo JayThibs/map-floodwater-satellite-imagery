@@ -2,6 +2,7 @@ import json
 import torch
 import numpy as np
 import os
+from io import BytesIO
     
 from model import FloodModel
 
@@ -18,7 +19,15 @@ def model_fn(model_dir):
 def input_fn(request_body, request_content_type):
     print("Accessing data...")
     assert request_content_type == 'application/x-npy'
-    data = np.array(request_body).reshape(1, 2, 512, 512) # this should be a numpy ndarray
+    print(type(request_body))
+    np_bytes = np_bytes.get_value()
+    print(type(np_bytes))
+    load_bytes = BytesIO(np_bytes)
+    data = np.load(load_bytes, allow_pickle=True)
+    print(data.shape)
+#     print(type(np.frombuffer(request_body, dtype='float32')))
+#     print(np.frombuffer(request_body, dtype='float32'))
+#     data = np.frombuffer(request_body, dtype='float32').reshape(1, 2, 512, 512) # this should be a numpy ndarray
     print("Data has been stored.")
     return data
 
