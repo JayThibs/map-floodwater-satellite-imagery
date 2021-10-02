@@ -33,7 +33,8 @@ class FloodModel(pl.LightningModule):
         torch.set_grad_enabled(False)
         
         # Data sent to endpoint
-        x_arr
+        print(x_arr)
+        print(type(x_arr))
 
         # Perform inference
         preds = self.forward(torch.from_numpy(x_arr))

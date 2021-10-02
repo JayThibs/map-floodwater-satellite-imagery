@@ -19,12 +19,15 @@ def model_fn(model_dir):
 def input_fn(request_body, request_content_type):
     print("Accessing data...")
     assert request_content_type == 'application/x-npy'
-    print(type(request_body))
-    np_bytes = request_body['data']
-    np_bytes = np_bytes.get_value()
-    print(type(np_bytes))
-    load_bytes = BytesIO(np_bytes)
+#     print(type(request_body))
+#     np_bytes = request_body
+#     print(type(np_bytes))
+    load_bytes = BytesIO(request_body)
     data = np.load(load_bytes, allow_pickle=True)
+    print(data)
+    print(type(data))
+    print(data.shape)
+#     data = np.ndarray(data, dtype=np.float32)
     print(data.shape)
 #     print(type(np.frombuffer(request_body, dtype='float32')))
 #     print(np.frombuffer(request_body, dtype='float32'))
@@ -45,5 +48,7 @@ def output_fn(predictions, content_type):
     print("Saving prediction for output...")
     assert content_type == 'application/x-npy'
     res = predictions.astype(np.uint8)
+    print(type(res))
+    print(res)
     print("Saved prediction, now sending data back to user.")
     return res
