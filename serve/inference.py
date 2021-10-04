@@ -50,9 +50,19 @@ def output_fn(predictions, content_type):
     res = predictions.astype(np.uint8)
     print(type(res))
     print(res)
+<<<<<<< HEAD
+    res = np.asarray(res) # converts ndarray to array so that it is JSON serializable
+    print(type(res))
+    print(res)
+#     from io import BytesIO
+#     np_bytes = BytesIO()
+#     np.save(np_bytes, res, allow_pickle=True)
+#     print(type(np_bytes))
+=======
     from io import BytesIO
     np_bytes = BytesIO()
     np.save(np_bytes, res, allow_pickle=True)
     print(type(np_bytes))
+>>>>>>> 79639f9384a5d559906fa66bff5b39c3db1432fc
     print("Saved prediction, now sending data back to user.")
     return np_bytes
