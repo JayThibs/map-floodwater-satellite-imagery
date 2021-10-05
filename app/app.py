@@ -5,7 +5,7 @@ import time
 from streamlit import caching
 import rasterio
 import json
-import sagemaker.predictor import Predictor
+from sagemaker.predictor import Predictor
 from sagemaker.serializers import NumpySerializer
 from sagemaker.deserializers import JSONDeserializer
 from sagemaker.session import Session
@@ -18,7 +18,7 @@ uploaded_files = st.file_uploader(" ", accept_multiple_files=True)
 print("Uploaded file:", uploaded_files)
 
 x_arr = None
-ENDPOINT_NAME = os.environ['ENDPOINT_NAME']
+ENDPOINT_NAME = os.environ["ENDPOINT_NAME"]
 
 if len(uploaded_files) == 2:
     print(uploaded_files)
@@ -53,7 +53,9 @@ st.subheader("Predict Images")
 
 if x_arr is not None:
     st.write("The model is predicting the floodwater areas in the SAR images...")
-    predictor = Predictor(ENDPOINT_NAME, serializer=NumpySerializer(), deserializer=JSONDeserializer())
+    predictor = Predictor(
+        ENDPOINT_NAME, serializer=NumpySerializer(), deserializer=JSONDeserializer()
+    )
     results = predictor.predict(x_arr)
     print(response)
     st.write(response)
