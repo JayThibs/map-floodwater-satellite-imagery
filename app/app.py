@@ -18,7 +18,7 @@ uploaded_files = st.file_uploader(" ", accept_multiple_files=True)
 print("Uploaded file:", uploaded_files)
 
 x_arr = None
-ENDPOINT_NAME = os.environ["ENDPOINT_NAME"]
+ENDPOINT_NAME = "floodwater-tuning-211001-2300-002-99c3af83-2021-10-05-17-43-15"  # os.environ["ENDPOINT_NAME"]
 
 if len(uploaded_files) == 2:
     print(uploaded_files)
@@ -54,7 +54,9 @@ st.subheader("Predict Images")
 if x_arr is not None:
     st.write("The model is predicting the floodwater areas in the SAR images...")
     predictor = Predictor(
-        ENDPOINT_NAME, serializer=NumpySerializer(), deserializer=JSONDeserializer()
+        ENDPOINT_NAME,
+        serializer=NumpySerializer(),
+        deserializer=JSONDeserializer(),
     )
     results = predictor.predict(x_arr)
     print(response)
