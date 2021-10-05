@@ -33,12 +33,13 @@ class FloodModel(pl.LightningModule):
         torch.set_grad_enabled(False)
         
         # Data sent to endpoint
-        print(x_arr)
-        print(type(x_arr))
+#         print(x_arr)
+#         print(type(x_arr))
 
         # Perform inference
         preds = self.forward(torch.from_numpy(x_arr))
         preds = torch.softmax(preds, dim=1)[:, 1]
+        print(preds)
         preds = (preds > 0.5) * 1
         print("Finished performing inference.")
         return preds.detach().numpy().squeeze().squeeze()
