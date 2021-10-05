@@ -19,6 +19,7 @@ print("Uploaded file:", uploaded_files)
 
 x_arr = None
 ENDPOINT_NAME = "floodwater-tuning-211001-2300-002-99c3af83-2021-10-05-17-43-15"  # os.environ["ENDPOINT_NAME"]
+AWS_DEFAULT_REGION = "us-east-1"  # os.environ["AWS_DEFAULT_REGION"]
 
 if len(uploaded_files) == 2:
     print(uploaded_files)
@@ -59,8 +60,8 @@ if x_arr is not None:
         deserializer=JSONDeserializer(),
     )
     results = predictor.predict(x_arr)
-    print(response)
-    st.write(response)
+    # print(results)
+    # st.write(results)
 
 
 st.markdown("***")
