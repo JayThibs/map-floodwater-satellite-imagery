@@ -46,17 +46,13 @@ def predict_fn(data, model):
 
 def output_fn(predictions, content_type):
     print("Saving prediction for output...")
-#     assert content_type == '*/*'
+    print(content_type)
+    assert content_type == 'application/json'
     res = predictions.astype(np.uint8)
     print(type(res))
     print(res)
-#     res = np.asarray(res)
-#     print(type())
-#     print(res)
-    from io import BytesIO
-    np_bytes = BytesIO()
-    np.save(np_bytes, res, allow_pickle=True)
-    print(type(np_bytes))
-    print(np_bytes)
+    res = json.dumps(res.tolist())
+    print(type(res))
+    print(res)
     print("Saved prediction, now sending data back to user.")
-    return np_bytes
+    return res
