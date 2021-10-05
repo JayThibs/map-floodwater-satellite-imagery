@@ -1,11 +1,14 @@
 import streamlit as st
 import numpy as np
+import os
 import time
 from streamlit import caching
 import rasterio
-import requests
 import json
-from io import BytesIO
+import sagemaker.predictor import Predictor
+from sagemaker.serializers import NumpySerializer
+from sagemaker.deserializers import JSONDeserializer
+from sagemaker.session import Session
 
 st.title("Floodwater Mapping with SAR Imagery")
 st.markdown("***")
@@ -15,6 +18,7 @@ uploaded_files = st.file_uploader(" ", accept_multiple_files=True)
 print("Uploaded file:", uploaded_files)
 
 x_arr = None
+ENDPOINT_NAME = os.environ['ENDPOINT_NAME']
 
 if len(uploaded_files) == 2:
     print(uploaded_files)
@@ -49,9 +53,8 @@ st.subheader("Predict Images")
 
 if x_arr is not None:
     st.write("The model is predicting the floodwater areas in the SAR images...")
-    np_bytes = BytesIO()
-    np.save(np_bytes, x_arr, allow_pickle=True)
-    response = requests.post("http://localhost:5000/predict", data=np_bytes)
+    predictor = Predictor(ENDPOINT_NAME, serializer=NumpySerializer(), deserializer=JSONDeserializer())
+    results = predictor.predict(x_arr)
     print(response)
     st.write(response)
 
