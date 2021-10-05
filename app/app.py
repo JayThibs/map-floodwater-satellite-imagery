@@ -1,8 +1,8 @@
 import streamlit as st
+from streamlit import caching
 import numpy as np
 import os
 import time
-from streamlit import caching
 import rasterio
 import json
 from sagemaker.predictor import Predictor
