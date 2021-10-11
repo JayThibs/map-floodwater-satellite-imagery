@@ -93,11 +93,6 @@ if __name__ =='__main__':
     
     print("Is there an available GPU? ", available_gpus)
     print("Device count: ", torch.cuda.device_count())
-    
-#     # Now we have all parameters and hyperparameters available and we need to match them with sagemaker 
-#     # structure. default_root_dir is set to out_put_data_dir to retrieve from training instances all the 
-#     # checkpoint and intermediary data produced by lightning
-#     mnistTrainer=pl.Trainer(hparams=args.hparams)
 
     # Set up our classifier class, passing params to the constructor
     ss_flood_model = FloodModel(hparams=hparams)
@@ -105,8 +100,12 @@ if __name__ =='__main__':
     # Runs model training 
     ss_flood_model.fit() # orchestrates our model training
     
+    best_model = FloodModel(hparams=hparams)
+    best_model_path = ss_flood_model.trainer_params["callbacks"][0].best_model_path
+    best_model = best_model.load_from_checkpoint(checkpoint_path=best_model_path)
+    
     # After model has been trained, save its state into model_dir which is then copied to back S3
     with open(os.path.join(args.model_dir, 'model.pth'), 'wb') as f:
-        torch.save(ss_flood_model.state_dict(), f)
+        torch.save(best_model.state_dict(), f)
         
 #     wandb.finish()
