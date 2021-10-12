@@ -17,9 +17,8 @@ uploaded_files = st.file_uploader(" ", accept_multiple_files=True)
 print("Uploaded file:", uploaded_files)
 
 x_arr = None
-ENDPOINT_NAME = "floodwater-tuning-211011-2225-002-49531969-2021-10-11-23-04-00"  # os.environ["ENDPOINT_NAME"]
+ENDPOINT_NAME = "floodwater-tuning-211011-2225-002-49531969-2021-10-12-02-16-06"  # os.environ["ENDPOINT_NAME"]
 AWS_DEFAULT_REGION = "us-east-1"  # os.environ["AWS_DEFAULT_REGION"]
-print(uploaded_files[0].name)
 
 if len(uploaded_files) == 3:
 
@@ -29,16 +28,22 @@ if len(uploaded_files) == 3:
     for file in uploaded_files:
 
         if file.name.endswith("vv.tif"):
-            with rasterio.open(uploaded_files[0]) as vv:
+            with rasterio.open(file) as vv:
                 vv_img = vv.read(1)
+                print(type(vv_img))
+                print("Loaded vv image.")
 
         elif file.name.endswith("vh.tif"):
-            with rasterio.open(uploaded_files[1]) as vh:
+            with rasterio.open(file) as vh:
                 vh_img = vh.read(1)
+                print(type(vh_img))
+                print("Loaded vh image.")
 
-        elif re.match(regex, file.name):
-            with rasterio.open(label_path) as fmask:
+        elif re.match(mask_regex, file.name):
+            with rasterio.open(file) as fmask:
                 mask = fmask.read(1)
+                print(type(mask))
+                print("Loaded mask.")
 
     x_arr = np.stack([vv_img, vh_img], axis=-1)
 
@@ -52,8 +57,8 @@ if len(uploaded_files) == 3:
     x_arr = np.transpose(x_arr, [2, 0, 1])
     x_arr = np.expand_dims(x_arr, axis=0)
 
-    print(x_arr)
-    print(x_arr.shape)
+    # print(x_arr)
+    # print(x_arr.shape)
 
     st.write("The SAR Imagery is ready to be used in the model!")
 
@@ -72,18 +77,20 @@ if x_arr is not None:
         serializer=NumpySerializer(),
         deserializer=JSONDeserializer(),
     )
-    results = predictor.predict(x_arr)
-    print(results)
-    st.write(results)
+    prediction = predictor.predict(x_arr)
+    prediction = np.array(prediction)
+    # print(prediction)
+    print("Prediction done.")
+    print(type(prediction))
     st.markdown("***")
     st.write(
         "Here's an RGB plot of the vh image, ground truth floodwater mask, and our prediction."
     )
     plot_preds(
-        prediction=results,
-        vv_path=uploaded_files[0],
-        vh_path=uploaded_files[1],
-        label_path=uploaded_files[2],
+        prediction=prediction,
+        vv=vv_img,
+        vh=vh_img,
+        mask=mask,
     )
     st.write(
         "Note: in a production setting, we would not have the ground truth. However, we're displaying it here to see how they compare."
