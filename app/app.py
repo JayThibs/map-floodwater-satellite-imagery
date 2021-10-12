@@ -2,31 +2,44 @@ import streamlit as st
 from streamlit import caching
 import numpy as np
 import os
-import time
+import re
 import rasterio
-import json
 from sagemaker.predictor import Predictor
 from sagemaker.serializers import NumpySerializer
 from sagemaker.deserializers import JSONDeserializer
-from sagemaker.session import Session
+from utils import plot_preds
 
 st.title("Floodwater Mapping with SAR Imagery")
 st.markdown("***")
 
-st.subheader("Upload the vv and vh Polarization Images")
+st.subheader("Upload the vv and vh Polarization Images as well as the ground truth.")
 uploaded_files = st.file_uploader(" ", accept_multiple_files=True)
 print("Uploaded file:", uploaded_files)
 
 x_arr = None
-ENDPOINT_NAME = "floodwater-tuning-211001-2300-002-99c3af83-2021-10-05-17-43-15"  # os.environ["ENDPOINT_NAME"]
+ENDPOINT_NAME = "floodwater-tuning-211011-2225-002-49531969-2021-10-11-23-04-00"  # os.environ["ENDPOINT_NAME"]
 AWS_DEFAULT_REGION = "us-east-1"  # os.environ["AWS_DEFAULT_REGION"]
+print(uploaded_files[0].name)
 
-if len(uploaded_files) == 2:
+if len(uploaded_files) == 3:
+
     print(uploaded_files)
-    with rasterio.open(uploaded_files[0]) as vv:
-        vv_img = vv.read(1)
-    with rasterio.open(uploaded_files[1]) as vh:
-        vh_img = vh.read(1)
+    mask_regex = "[a-z]+\d+.tif"
+
+    for file in uploaded_files:
+
+        if file.name.endswith("vv.tif"):
+            with rasterio.open(uploaded_files[0]) as vv:
+                vv_img = vv.read(1)
+
+        elif file.name.endswith("vh.tif"):
+            with rasterio.open(uploaded_files[1]) as vh:
+                vh_img = vh.read(1)
+
+        elif re.match(regex, file.name):
+            with rasterio.open(label_path) as fmask:
+                mask = fmask.read(1)
+
     x_arr = np.stack([vv_img, vh_img], axis=-1)
 
     # Min-max normalization
@@ -60,8 +73,21 @@ if x_arr is not None:
         deserializer=JSONDeserializer(),
     )
     results = predictor.predict(x_arr)
-    # print(results)
-    # st.write(results)
+    print(results)
+    st.write(results)
+    st.markdown("***")
+    st.write(
+        "Here's an RGB plot of the vh image, ground truth floodwater mask, and our prediction."
+    )
+    plot_preds(
+        prediction=results,
+        vv_path=uploaded_files[0],
+        vh_path=uploaded_files[1],
+        label_path=uploaded_files[2],
+    )
+    st.write(
+        "Note: in a production setting, we would not have the ground truth. However, we're displaying it here to see how they compare."
+    )
 
 
 st.markdown("***")
