@@ -3,3 +3,6 @@ rasterio
 numpy
 requests
 sagemaker
+sklearn
+matplotlib
+tkinter
