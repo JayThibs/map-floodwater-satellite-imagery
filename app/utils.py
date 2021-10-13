@@ -6,7 +6,7 @@ import streamlit as st
 import tkinter
 import matplotlib
 
-matplotlib.use("tkagg")
+matplotlib.use("Qt5Agg")
 
 
 def process_mask(mask):
