@@ -17,7 +17,7 @@ uploaded_files = st.file_uploader(" ", accept_multiple_files=True)
 print("Uploaded file:", uploaded_files)
 
 x_arr = None
-ENDPOINT_NAME = "floodwater-tuning-211012-2322-002-8d81959f-2021-10-12-23-59-07"  # os.environ["ENDPOINT_NAME"]
+ENDPOINT_NAME = ""  # os.environ["ENDPOINT_NAME"]
 AWS_DEFAULT_REGION = "us-east-1"  # os.environ["AWS_DEFAULT_REGION"]
 
 if len(uploaded_files) == 3:
