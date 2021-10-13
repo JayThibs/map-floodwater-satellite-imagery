@@ -10,7 +10,11 @@ class FloodModel(pl.LightningModule):
     def __init__(self):
         super().__init__()
         print("Instantiating model...")
-        self.architecture = "DeepLabV3" # os.environ['MODEL_ARCHITECTURE']
+        # Please change the architecture to DeepLabV3 if the top model was DeepLabV3
+        # As stated in the notebook, I haven't been able to figure out how to pass
+        # environment variables to the deployed endpoint yet.
+        # I reached out to Amazon, but have not gotten a response as of yet.
+        self.architecture = 'Unet' # os.environ['SM_MODEL_ARCHITECTURE']
         self.backbone = "resnet34"
         cls = getattr(smp, self.architecture)
         self.model = cls(

@@ -28,8 +28,6 @@ training_transformations = album.Compose(
      album.RandomRotate90(),
      album.HorizontalFlip(),
      album.VerticalFlip(),
-     album.RandomBrightness(),
-     album.RandomBrightnessContrast()
     ]
 )
 
@@ -106,21 +104,7 @@ class FloodModel(pl.LightningModule):
         criterion = XEDiceLoss()
         xe_dice_loss = criterion(preds, y)
         print('Successfully calculated loss.')
-        # For 0.9.0 pl:
-#         # Logs training loss
-#         logs = {'train_loss': xe_dice_loss}
         
-#         output = {
-#             # This is required in training to be used by backpropagation
-#             'loss': xe_dice_loss,
-#             # This is optional for logging pourposes
-#             'log': logs
-#         }
-
-#         result = pl.TrainResult(minimize=xe_dice_loss)
-#         result.log('loss', xe_dice_loss)
-    
-        # For newer pl versions:
         # Log batch xe_dice_loss
         self.log(
             "xe_dice_loss",
@@ -153,10 +137,6 @@ class FloodModel(pl.LightningModule):
         intersection, union = intersection_and_union(preds, y)
         self.intersection += intersection
         self.union += union
-        
-        # For 0.9.0 pl:
-#         result = pl.EvalResult(checkpoint_on=batch_iou)
-#         result.log('val_loss', batch_iou, prog_bar=True, on_step=True)
         
         # Log batch IOU
         batch_iou = intersection / union
@@ -213,11 +193,6 @@ class FloodModel(pl.LightningModule):
         self.intersection = 0
         self.union = 0
 
-        # For 0.9.0 pl:
-#         result = pl.EvalResult(checkpoint_on=epoch_iou, early_stop_on=epoch_iou)
-#         result.log('val_loss', epoch_iou, prog_bar=True, on_step=True)
-
-        # For newer pl versions:
         # Log epoch validation IOU
         self.log("val_iou", epoch_iou, on_epoch=True, prog_bar=True, logger=True)
         return epoch_iou
