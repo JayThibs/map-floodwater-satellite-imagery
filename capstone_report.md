@@ -15,6 +15,8 @@ This is easier said than done. We can use satellites with cameras operating in t
 
 Each piece of land that the satellite's camera takes pictures of will have two images, one image in the VH polarization of light (vertical transmit and horizontal receive) and another in the VV polarization (vertical transmit and vertical receive). Both polarization bring out different characteristics in their images, allowing our model to learn all the intricacies of the land and better seperate floodwater from non-floodwater.
 
+In order to train our model to be able to separate floodwater from non-floodwater, we also have label masks that go with every pair of VV and VH images. So, our goal is to train a model that can map the VV and VH images to the label mask images where every pixel has been annotated as floodwater or non-floodwater.
+
 As someone who is focused on using AI for good, this project is a great opportunity. As we improve our approach to predict natural disasters before they happen, we can reduce suffering and save lives. It is especially important to act on this quickly due to the increasing impacts of climate change.
 
 This project is an extension of the “STAC Overflow: Map Floodwater from Radar Imagery” competition on DrivenData.org: https://www.drivendata.org/competitions/81/detect-flood-water/page/386/
@@ -62,7 +64,33 @@ In this section, you will be expected to analyze the data you are using for the 
 - _If a dataset is **not** present for this problem, has discussion been made about the input space or input data for your problem?_
 - _Are there any abnormalities or characteristics about the input space or dataset that need to be addressed? (categorical variables, missing values, outliers, etc.)_
 
-The dataset we’ll be using is a subset of the Sentinel-1 dataset, which contains radar images stored as 512 x 512 pixel GeoTIFFs. Since the images are not taken in the human visible wavelength range, we need to apply a false color composite if we want to visualize the images. However, this is only for visualization, we will not be using the false color composite images as training data.
+The dataset we’ll be using is a subset of the Sentinel-1 dataset, which contains radar images stored as 512 x 512 pixel GeoTIFFs. In order to train our model to be able to separate floodwater from non-floodwater, we also have label masks that go with every pair of VV and VH images. 
+
+In GeoTIFFS, we have the image data as well as other metadata regarding the image, as we can see here:
+
+<img src="./imgs/metadata.png" alt="metadata" width="400" />
+
+This metadata gives us information like "nodata" which let's us know which values in the image are described as missing. In this case, all 0.0 values in the image are "missing values." We can also grab the bounding coordinates from the GeoTIFF (where was the image taken on Earth):
+
+<img src="./imgs/bounds.png" alt="bounds" width="600" />
+
+Along with the GeoTIFFs, we have a metadata csv of the images that we use to identify each `chip_id` along with its corresponding images of both polarizations.
+
+The following quotes are from the DrivenData competition page (Training set - Images): https://www.drivendata.org/competitions/81/detect-flood-water/page/386/
+
+> Each pixel in a radar image represents the energy that was reflected back to the satellite measured in decibels (dB). Pixel values can range from negative to positive values. A pixel value of 0.0 indicates missing data.
+
+> Sentinel-1 is a phase-preserving dual-polarization SAR system, meaning that it can receive a signal in both horizontal and vertical polarizations. Different polarizations can be used to bring out different physical properties in a scene. The data for this challenge includes two microwave frequency readings: VV (vertical transmit, vertical receive) and VH (vertical transmit, horizontal receive).
+
+<img src="./imgs/c2s-sar-polarization.jpeg" alt="c2s-sar-polarization" width="1000" />
+
+### Exploratory Visualization
+In this section, you will need to provide some form of visualization that summarizes or extracts a relevant characteristic or feature about the data. The visualization should adequately support the data being used. Discuss why this visualization was chosen and how it is relevant. Questions to ask yourself when writing this section:
+- _Have you visualized a relevant characteristic or feature about the dataset or input data?_
+- _Is the visualization thoroughly analyzed and discussed?_
+- _If a plot is provided, are the axes, title, and datum clearly defined?_
+
+Since the images are not taken in the human visible wavelength range, we need to apply a false color composite if we want to visualize the images. However, this is only for visualization, we will not be using the false color composite images as training data.
 
 VV Polarization example:
 
@@ -72,19 +100,11 @@ VH Polarization example:
 
 <img src="./imgs/c2s-vh.png" alt="c2s-vh" width="300" />
 
-The following quotes are from the DrivenData competition page (Training set - Images): https://www.drivendata.org/competitions/81/detect-flood-water/page/386/
+Each image has a `chip_id` associated with it. There is 
 
-> Each pixel in a radar image represents the energy that was reflected back to the satellite measured in decibels (dB). Pixel values can range from negative to positive values. A pixel value of 0.0 indicates missing data.
+<img src="./imgs/country-info.png" alt="country-info.png" width="1000" />
 
-> Sentinel-1 is a phase-preserving dual-polarization SAR system, meaning that it can receive a signal in both horizontal and vertical polarizations. Different polarizations can be used to bring out different physical properties in a scene. The data for this challenge includes two microwave frequency readings: VV (vertical transmit, vertical receive) and VH (vertical transmit, horizontal receive).
-
-![c2s-sar-polarization](./imgs/c2s-sar-polarization.png)
-
-### Exploratory Visualization
-In this section, you will need to provide some form of visualization that summarizes or extracts a relevant characteristic or feature about the data. The visualization should adequately support the data being used. Discuss why this visualization was chosen and how it is relevant. Questions to ask yourself when writing this section:
-- _Have you visualized a relevant characteristic or feature about the dataset or input data?_
-- _Is the visualization thoroughly analyzed and discussed?_
-- _If a plot is provided, are the axes, title, and datum clearly defined?_
+Notice how some countries have a lot more chips than others. We will not be taking this into account for our model, but you could imagine that some types of images will be more common in the dataset than others. Therefore, it may be that the model performs well on US data (for example), but performs poorly on Bolivia data since it simply does not have enough data for that kind of terrain. If we wanted to further fine-tune the model, we could identify the types of locations where the model is performing poorly and work to improve on those kinds of terrains. For example, you could create a specialized model for that kind of data and include it in an ensemble. You could also find those types of images and pre-train a model before fine-tuning it.
 
 ### Algorithms and Techniques
 In this section, you will need to discuss the algorithms and techniques you intend to use for solving the problem. You should justify the use of each one based on the characteristics of the problem and the problem domain. Questions to ask yourself when writing this section:
