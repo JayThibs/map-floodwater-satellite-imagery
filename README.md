@@ -30,19 +30,19 @@ The dataset we’ll be using is a subset of the Sentinel-1 dataset, which contai
 
 VV Polarization example:
 
-![c2s-vv](./imgs/c2s-vv.png)
+<img src="./imgs/c2s-vv.png" alt="c2s-vv" width="300" />
 
 VH Polarization example:
 
-![c2s-vh](./imgs/c2s-vh.png)
+<img src="./imgs/c2s-vh.png" alt="c2s-vh" width="300" />
 
 The following quotes are from the DrivenData competition page (Training set - Images): https://www.drivendata.org/competitions/81/detect-flood-water/page/386/
 
-“Each pixel in a radar image represents the energy that was reflected back to the satellite measured in decibels (dB). Pixel values can range from negative to positive values. A pixel value of 0.0 indicates missing data.”
+> Each pixel in a radar image represents the energy that was reflected back to the satellite measured in decibels (dB). Pixel values can range from negative to positive values. A pixel value of 0.0 indicates missing data.
 
-“Sentinel-1 is a phase-preserving dual-polarization SAR system, meaning that it can receive a signal in both horizontal and vertical polarizations. Different polarizations can be used to bring out different physical properties in a scene. The data for this challenge includes two microwave frequency readings: VV (vertical transmit, vertical receive) and VH (vertical transmit, horizontal receive).”
+> Sentinel-1 is a phase-preserving dual-polarization SAR system, meaning that it can receive a signal in both horizontal and vertical polarizations. Different polarizations can be used to bring out different physical properties in a scene. The data for this challenge includes two microwave frequency readings: VV (vertical transmit, vertical receive) and VH (vertical transmit, horizontal receive).
 
-![c2s-sar-polarization](./imgs/c2s-sar-polarization.png)
+<img src="./imgs/c2s-sar-polarization.jpeg" alt="c2s-sar-polarization" width="1000" />
 
 # Benchmark Model
 
@@ -54,7 +54,7 @@ The benchmark model is a U-Net model with a ResNet34 as the backbone of the mode
 
 Our goal is to get the highest performance we can on the Jaccard index metric (also known as Generalized Intersection over Union (IoU)). The Jaccard index measures the similarity between two label sets. In this case, it measures the size of the intersection divided by the size of the union of non-missing pixels. In other words, it measures how accurately we have segmented floodwater from other matter.
 
-![jaccard_image_index](./imgs/jaccard_index_equation.png)
+<img src="./imgs/jaccard_index_equation.png" alt="jaccard_image_index" width="600" />
 
 where A is the set of true pixels and B is the set of predicted pixels.
 
