@@ -1,7 +1,7 @@
 # Machine Learning Engineer Nanodegree
 ## Mapping Floodwater with SAR Imagery Capstone Project
 Jacques Thibodeau  
-October 24th, 2021
+October 26th, 2021
 
 ## I. Definition
 
@@ -38,7 +38,7 @@ So, we will:
 * Do data exploration on the SAR images
 * Preprocess the data
 * Load data to S3
-* Train two models using SageMaker's HyperparameterTuning function
+* Train models using SageMaker's HyperparameterTuning function (in the notebook we commented out the hyperparameter tuning job to reduce runtime)
 * Select the best model for deployment
 * Deploy the model
 * Perform inference on the deployed model in the notebook
@@ -58,11 +58,6 @@ Ref (Performance metric): https://www.drivendata.org/competitions/81/detect-floo
 _(approx. 2-4 pages)_
 
 ### Data Exploration
-In this section, you will be expected to analyze the data you are using for the problem. This data can either be in the form of a dataset (or datasets), input data (or input files), or even an environment. The type of data should be thoroughly described and, if possible, have basic statistics and information presented (such as discussion of input features or defining characteristics about the input or environment). Any abnormalities or interesting qualities about the data that may need to be addressed have been identified (such as features that need to be transformed or the possibility of outliers). Questions to ask yourself when writing this section:
-- _If a dataset is present for this problem, have you thoroughly discussed certain features about the dataset? Has a data sample been provided to the reader?_
-- _If a dataset is present for this problem, are statistics about the dataset calculated and reported? Have any relevant results from this calculation been discussed?_
-- _If a dataset is **not** present for this problem, has discussion been made about the input space or input data for your problem?_
-- _Are there any abnormalities or characteristics about the input space or dataset that need to be addressed? (categorical variables, missing values, outliers, etc.)_
 
 The dataset we’ll be using is a subset of the Sentinel-1 dataset, which contains radar images stored as 512 x 512 pixel GeoTIFFs. In order to train our model to be able to separate floodwater from non-floodwater, we also have label masks that go with every pair of VV and VH images. 
 
@@ -83,6 +78,10 @@ The following quotes are from the DrivenData competition page (Training set - Im
 > Sentinel-1 is a phase-preserving dual-polarization SAR system, meaning that it can receive a signal in both horizontal and vertical polarizations. Different polarizations can be used to bring out different physical properties in a scene. The data for this challenge includes two microwave frequency readings: VV (vertical transmit, vertical receive) and VH (vertical transmit, horizontal receive).
 
 <img src="./imgs/c2s-sar-polarization.jpeg" alt="c2s-sar-polarization" width="1000" />
+
+After looking at our data, there were no abnormalities we needed to fix in the dataset.
+
+Note: we could have added additional data from the Microsoft Planetary Computer to augment our dataset with information about things such as elevation, but you need to ask for special permission from Microsoft to have access. I gained access and I was able to work with the data in Colab, but I left it out of SageMaker since the project reviewer will not have access.
 
 ### Exploratory Visualization
 In this section, you will need to provide some form of visualization that summarizes or extracts a relevant characteristic or feature about the data. The visualization should adequately support the data being used. Discuss why this visualization was chosen and how it is relevant. Questions to ask yourself when writing this section:
