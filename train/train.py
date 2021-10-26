@@ -20,18 +20,35 @@ if __name__ =='__main__':
 
     parser = argparse.ArgumentParser()
     
+    # Below is only used when we are training one model.
+    
     # hyperparameters sent by the client are passed as command-line arguments to the script.
-    parser.add_argument('--architecture', type=str, default=os.environ['SM_HP_ARCHITECTURE'])
-    parser.add_argument('--backbone', type=str, default=os.environ['SM_HP_BACKBONE'])
-    parser.add_argument('--weights', type=str, default=os.environ['SM_HP_WEIGHTS'])
-    parser.add_argument('--lr', type=float, default=os.environ['SM_HP_LR'])
-    parser.add_argument('--min_epochs', type=int, default=os.environ['SM_HP_MIN_EPOCHS'])
-    parser.add_argument('--max_epochs', type=int, default=os.environ['SM_HP_MAX_EPOCHS'])
-    parser.add_argument('--patience', type=int, default=os.environ['SM_HP_PATIENCE'])
-    parser.add_argument('--batch_size', type=int, default=os.environ['SM_HP_BATCH_SIZE'])
-    parser.add_argument('--num_workers', type=int, default=os.environ['SM_HP_NUM_WORKERS'])
-    parser.add_argument('--val_sanity_checks', type=int, default=os.environ['SM_HP_VAL_SANITY_CHECKS'])
-    parser.add_argument('--log_path', type=str, default=os.environ["SM_HP_LOG_PATH"])
+    parser.add_argument('--architecture', type=str, default='Unet')
+    parser.add_argument('--backbone', type=str, default='efficientnet-b0')
+    parser.add_argument('--weights', type=str, default='imagenet')
+    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--min_epochs', type=int, default=6)
+    parser.add_argument('--max_epochs', type=int, default=40)
+    parser.add_argument('--patience', type=int, default=5)
+    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--num_workers', type=int, default=8)
+    parser.add_argument('--val_sanity_checks', type=int, default=0)
+    parser.add_argument('--log_path', type=str, default='tensorboard_logs')
+    
+    ## Below is only used when we are running a Hyperparameter Tuning job.
+    
+#     # hyperparameters sent by the client are passed as command-line arguments to the script.
+#     parser.add_argument('--architecture', type=str, default=os.environ['SM_HP_ARCHITECTURE'])
+#     parser.add_argument('--backbone', type=str, default=os.environ['SM_HP_BACKBONE'])
+#     parser.add_argument('--weights', type=str, default=os.environ['SM_HP_WEIGHTS'])
+#     parser.add_argument('--lr', type=float, default=os.environ['SM_HP_LR'])
+#     parser.add_argument('--min_epochs', type=int, default=os.environ['SM_HP_MIN_EPOCHS'])
+#     parser.add_argument('--max_epochs', type=int, default=os.environ['SM_HP_MAX_EPOCHS'])
+#     parser.add_argument('--patience', type=int, default=os.environ['SM_HP_PATIENCE'])
+#     parser.add_argument('--batch_size', type=int, default=os.environ['SM_HP_BATCH_SIZE'])
+#     parser.add_argument('--num_workers', type=int, default=os.environ['SM_HP_NUM_WORKERS'])
+#     parser.add_argument('--val_sanity_checks', type=int, default=os.environ['SM_HP_VAL_SANITY_CHECKS'])
+#     parser.add_argument('--log_path', type=str, default=os.environ["SM_HP_LOG_PATH"])
 
     # Data, model, and output directories. Passed by sagemaker with default to os env variables
     parser.add_argument('-o','--output-data-dir', type=str, default=os.environ['SM_OUTPUT_DATA_DIR'])
