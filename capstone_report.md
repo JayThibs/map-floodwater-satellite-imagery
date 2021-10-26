@@ -142,6 +142,28 @@ In this section, you will need to discuss the process of improvement you made up
 - _Is the process of improvement clearly documented, such as what techniques were used?_
 - _Are intermediate and final solutions clearly reported as the process is improved?_
 
+I started by training a model using the same configuration as the Benchmark blog post:
+
+* Architecture: Unet
+* Encoder/Backbone model: ResNet34
+* Learning Rate: 0.001
+
+The blog post ended up with a validation IOU of 0.3069. I ended up with 0.32162. Perhaps this was because I trained if for longer.
+
+Afterwards, I wanted to tune the hyperparameters so I trained many models in SageMaker using the Hyperparameter Tuning feature and in Google Colab (we used Weights and Biases to train the models), and we found that the best configuration for our model is the following:
+
+(Best model configuration found using a Weights and Biases Hyperparameter Sweep in Google Colab)
+* Architecture: Unet
+* Encoder/Backbone model: EfficientNet-b0
+* Learning Rate: 0.001
+
+This gave us a validation IOU (our comparison metric) of 0.405 in Colab, which is much better than what was obtained in the benchmark blog post (0.3069).
+
+Here's the results of the hyperparameter sweep we ran with Weights and Biases, the selected hyperparameter curve shows our best model:
+
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/hyperparameter-sweep.png" alt="hyperparameter-sweep" width="800" />
+
+**Final Model:** Our final model that I trained in SageMaker got us a validation IOU of 0.43338 (using the same parameters as the best Colab model), much higher than the benchmark.
 
 ## IV. Results
 _(approx. 2-3 pages)_
