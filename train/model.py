@@ -46,7 +46,7 @@ class FloodModel(pl.LightningModule):
         self.min_epochs = self.hparams.get("min_epochs", 6)
         self.patience = self.hparams.get("patience", 5)
         self.num_workers = self.hparams.get("num_workers", 2)
-        print(self.num_workers)
+#         print(self.num_workers)
         self.batch_size = self.hparams.get("batch_size", 8)
         self.x_train = self.hparams.get("x_train")
         self.y_train = self.hparams.get("y_train")
@@ -54,7 +54,7 @@ class FloodModel(pl.LightningModule):
         self.y_val = self.hparams.get("y_val")
         self.output_path = self.hparams.get("output_path", "model-outputs")
         self.gpus = self.hparams.get("gpus", False)
-        print(self.gpus)
+#         print(self.gpus)
         self.transform = training_transformations
 
         # Where final model will be saved

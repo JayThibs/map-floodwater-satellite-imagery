@@ -15,7 +15,7 @@ class FloodModel(pl.LightningModule):
         # environment variables to the deployed endpoint yet.
         # I reached out to Amazon, but have not gotten a response as of yet.
         self.architecture = 'Unet' # os.environ['SM_MODEL_ARCHITECTURE']
-        self.backbone = "resnet34"
+        self.backbone = "efficientnet-b0"
         cls = getattr(smp, self.architecture)
         self.model = cls(
            encoder_name=self.backbone,
