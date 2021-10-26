@@ -39,15 +39,15 @@ class FloodModel(pl.LightningModule):
         self.save_hyperparameters()
         self.architecture = self.hparams.get("architecture", "Unet")
         print(self.architecture)
-        self.backbone = self.hparams.get("backbone", "resnet34")
+        self.backbone = self.hparams.get("backbone", "efficientnet-b0")
         self.weights = self.hparams.get("weights", "imagenet")
         self.lr = self.hparams.get("lr", 1e-3)
-        self.max_epochs = self.hparams.get("max_epochs", 30)
+        self.max_epochs = self.hparams.get("max_epochs", 40)
         self.min_epochs = self.hparams.get("min_epochs", 6)
-        self.patience = self.hparams.get("patience", 4)
+        self.patience = self.hparams.get("patience", 5)
         self.num_workers = self.hparams.get("num_workers", 2)
         print(self.num_workers)
-        self.batch_size = self.hparams.get("batch_size", 32)
+        self.batch_size = self.hparams.get("batch_size", 8)
         self.x_train = self.hparams.get("x_train")
         self.y_train = self.hparams.get("y_train")
         self.x_val = self.hparams.get("x_val")
@@ -178,8 +178,8 @@ class FloodModel(pl.LightningModule):
 
         scheduler = {
             "scheduler": scheduler,
-            "interval": "epoch",
-            "monitor": "val_iou",
+            "interval": "step",
+            "monitor": "xe_dice_loss_step",
         } # logged value to monitor
         return [optimizer], [scheduler]
 
@@ -194,7 +194,7 @@ class FloodModel(pl.LightningModule):
         self.union = 0
 
         # Log epoch validation IOU
-        self.log("val_iou", epoch_iou, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val_epoch_iou", epoch_iou, on_epoch=True, prog_bar=True, logger=True)
         return epoch_iou
 
     ## Convenience Methods ##
@@ -213,16 +213,19 @@ class FloodModel(pl.LightningModule):
 
     def _get_trainer_params(self):
         # Define callback behavior
+        monitoring_value = "val_epoch_iou"
+        mode = "max"
         checkpoint_callback = ModelCheckpoint(
             dirpath=self.output_path,
-            monitor="val_iou",
-            mode="max",
+            # save_top_k=1,
+            monitor=monitoring_value,
+            mode=mode,
             verbose=True,
         )
         early_stop_callback = EarlyStopping(
-            monitor="val_iou",
-            patience=(self.patience * 3),
-            mode="max",
+            monitor=monitoring_value,
+            patience=(self.patience * 4),
+            mode=mode,
             verbose=True,
         )
         
