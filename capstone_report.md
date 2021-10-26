@@ -177,20 +177,23 @@ In this section, you will summarize the entire end-to-end problem solution and d
 - _Does the final model and solution fit your expectations for the problem, and should it be used in a general setting to solve these types of problems?_
 
 ### Improvement
-In this section, you will need to provide discussion as to how one aspect of the implementation you designed could be improved. As an example, consider ways your implementation can be made more general, and what would need to be modified. You do not need to make this improvement, but the potential solutions resulting from these changes are considered and compared/contrasted to your current solution. Questions to ask yourself when writing this section:
-- _Are there further improvements that could be made on the algorithms or techniques you used in this project?_
-- _Were there algorithms or techniques you researched that you did not know how to implement, but would consider using if you knew how?_
-- _If you used your final solution as the new benchmark, do you think an even better solution exists?_
 
-To improve our results, we can do some of the following things:
-
+**To improve our model performance results, we can do some of the following things:**
 
 * Use an ensemble of the models (I tried to do this, but deployed ensembles are a little complicated in SageMaker and the documentation is not too clear so I decided I would only deploy a single model).
 * If we use an ensembled model, we can decide to use the max value of either model in the ensemble since this will bias towards predicting floodwater. Based on the predictions we get from the model, it seems that the model is more likely to miss predicting floodwater over non-floodwater. Therefore, it would make sense to choose the max in case one of the models is predicting floodwater and another one (incorrectly) isn't.
+* The models added to the ensemble could also be something like a [CatBoostedClassifier](https://catboost.ai/en/docs/concepts/python-reference_catboostclassifier) that predicts every pixel. From their website: "CatBoost is a machine learning algorithm that uses gradient boosting on decision trees."
 * Train many more models using different albumentations, backbone models, architectures (head), and loss functions.
+* We could use the additional data from Microsoft Planetary Computer. In particular, the Nasadem band is an incredibly important.
+* We could pre-train a deep learning model on Satellite-Aperture Radar (SAR) images because the current backbone/encoder models used in Semantic Segmentation are pre-trained on imagenet (a large image dataset), which does not have SAR images. This means that the model weights of ResNet34 or EfficientNet-b0 were not updated to recognize SAR images. Therefore, if we pre-train a model on a large dataset of SAR images, we could expect that the model we fine-tune with that pre-trained model will perform a lot better than a pre-trained imagenet model.
+
+**For our web app:**
+
+* Allowing the user to load all images at once and then choosing which ones they would like to predict.
+* Storing the predictions in a database.
 * Setup a lambda + API Gateway endpoint to reduce the cost per API call.
 * Send a continuous stream of images through our model endpoint as if we are using the endpoint to predict flooding in real-time in order to save lives and reduce damages.
-* We could use the additional data from Microsoft Planetary Computer. In particular, the Nasadem band is an incredibly important.
+
 
 
 -----------
