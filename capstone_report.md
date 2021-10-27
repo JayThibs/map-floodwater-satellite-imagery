@@ -55,7 +55,6 @@ where A is the set of true pixels and B is the set of predicted pixels.
 Ref (Performance metric): https://www.drivendata.org/competitions/81/detect-flood-water/page/386/
 
 ## II. Analysis
-_(approx. 2-4 pages)_
 
 ### Data Exploration
 
@@ -138,6 +137,12 @@ In this section, all of your preprocessing steps will need to be clearly documen
 - _Based on the **Data Exploration** section, if there were abnormalities or characteristics that needed to be addressed, have they been properly corrected?_
 - _If no preprocessing is needed, has it been made clear why?_
 
+Before model training, we need to prepare the data in a specific way.
+
+First, we split the data (with a random seed) to create a training set and a validation set. Then, we create a dataframe where each row describes a `chip_id`, which links to the set of VH and VV images. We need to make sure that the path to the training files are properly created in the dataframe. Since our model is trained in a Docker container, we need to set the filepaths to the paths the dataset will be downloaded to in the Docker container. This is in the `/opt/ml/input/data/data_s3_uri/` subdirectory.
+
+To feed the image data to our model, we read the images as numpy arrays and then we have to stack the arrays of the VH and VV images together. Then, we apply a min-max normalization on the input pixel values (unique for our dataset; makes sure we have no negative values and normalizes across pixels), apply data augmentations with the Albumentations package (ex: RandomCrop, RandomRotate90, HorizontalFlip, and VerticalFlip), and then pass those values to our model for training.
+
 ### Implementation
 In this section, the process for which metrics, algorithms, and techniques that you implemented for the given data will need to be clearly documented. It should be abundantly clear how the implementation was carried out, and discussion should be made regarding any complications that occurred during this process. Questions to ask yourself when writing this section:
 - _Is it made clear how the algorithms and techniques were implemented with the given datasets or input data?_
@@ -145,10 +150,6 @@ In this section, the process for which metrics, algorithms, and techniques that 
 - _Was there any part of the coding process (e.g., writing complicated functions) that should be documented?_
 
 ### Refinement
-In this section, you will need to discuss the process of improvement you made upon the algorithms and techniques you used in your implementation. For example, adjusting parameters for certain models to acquire improved solutions would fall under the refinement category. Your initial and final solutions should be reported, as well as any significant intermediate results as necessary. Questions to ask yourself when writing this section:
-- _Has an initial solution been found and clearly reported?_
-- _Is the process of improvement clearly documented, such as what techniques were used?_
-- _Are intermediate and final solutions clearly reported as the process is improved?_
 
 I started by training a model using the same configuration as the Benchmark blog post:
 
@@ -170,6 +171,8 @@ This gave us a validation IOU (our comparison metric) of 0.405 in Colab, which i
 Here's the results of the hyperparameter sweep we ran with Weights and Biases, the selected hyperparameter curve shows our best model:
 
 <img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/hyperparameter-sweep.png" alt="hyperparameter-sweep" width="800" />
+
+I also tried different data augmentation configurations, but I wasn't getting better results so I stuck with the ones I have.
 
 **Final Model:** Our final model that I trained in SageMaker got us a validation IOU of 0.43338 (using the same parameters as the best Colab model), much higher than the benchmark.
 
