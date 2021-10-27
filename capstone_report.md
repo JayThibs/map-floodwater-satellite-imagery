@@ -223,6 +223,86 @@ We are using the `segmentation_model.pytorch` package to fine-tune some pre-trai
     
 In other words, we grab either architecture with `getattr(smp, self.architecture)` and then instantiate it with `cls(...)`.
 
+Now that we have an instantiated model, we can put it in the PyTorch Lightning `LightningModule` which basically makes it easy to train a PyTorch model. There's a lot to know about Lightning, but it essentially works by removing all the boilerplate code of pure PyTorch, making it easier to train a model and less bug-prone. It has specific methods that makes training simpler.
+
+If we focus on the training part, though, we see in `training_step` that our model starts by grabbing each batch of images passed to our model. Those batches are pixel arrays of our images that are passed to the model. `x` is our training images, and `y` is what we are training to predict (our ground truth). We have our images go through the `forward` method, which takes the input images and calculates the prediction (`preds`) after going through the layers of the model.
+
+    def forward(self, image):
+        # Forward pass through the network
+        return self.model(image)
+
+    def training_step(self, batch, batch_idx):
+        # Swtich on training mode
+        self.model.train()
+        torch.set_grad_enabled(True)
+
+        # Load images and labels
+        x = batch["chip"]
+        y = batch["label"].long()
+        if self.gpus:
+            x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
+
+        # Forward pass
+        preds = self.forward(x)
+        
+        # Calculate training loss
+        criterion = XEDiceLoss()
+        xe_dice_loss = criterion(preds, y)
+        print('Successfully calculated loss.')
+        
+        # Log batch xe_dice_loss
+        self.log(
+            "xe_dice_loss",
+            xe_dice_loss,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+            logger=True
+        )
+
+        return xe_dice_loss
+
+We keep going through each batch of the data. Once we have gone through all the batches, we've finished the epoch and we can calculate the model performance by seeing how well it performs on the validation data.
+
+#### Loss Function
+
+A loss function is what we use in deep learning to help our model know how well it is performing and, by consequence, how we should update the model weights. We used the XEDiceLoss loss function to train our model. From the Benchmark Blog Post of the competition:
+
+> For training, we will use a standard mixture of 50% cross-entropy loss and 50% dice loss, which improves learning when there are unbalanced classes. Since our images tend to contain more non-water than water pixels, this metric should be a good fit. Broadly speaking, cross-entropy loss evaluates differences between predicted and ground truth pixels and averages over all pixels, while dice loss measures overlap between predicted and ground truth pixels and divides a function of this value by the total number of pixels in both images. This custom class will inherit torch.nn.Module, which is the base class for all neural network modules in PyTorch. A lower XEDiceLoss score indicates better performance.
+
+When I was using earlier versions of `torch`, I had a lot of issues with this loss function. This was because the dtypes for `torch.where()` used to have to be very particular. However, when I switched to using more recent versions of `torch`, I no longer had any data type errors.
+
+That said, I did need to add `.float()` to `self.xe(pred, temp_true).float()` because I could not calculate the mean of `xe_loss.masked_select(valid_pixel_mask).mean()` without it.
+
+    class XEDiceLoss(nn.Module):
+    """
+    Computes (0.5 * CrossEntropyLoss) + (0.5 * DiceLoss).
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.xe = nn.CrossEntropyLoss(reduction="none")
+
+    def forward(self, pred, true):
+        valid_pixel_mask = true.ne(255) # valid pixel mask
+        
+        # Cross-entropy loss
+        temp_true = torch.where((true == 255), 0, true) # cast 255 to 0 temporarily
+        xe_loss = self.xe(pred, temp_true).float()
+        xe_loss = xe_loss.masked_select(valid_pixel_mask).mean()
+
+        # Dice loss
+        pred = torch.softmax(pred, dim=1)[:, 1]
+        pred = pred.masked_select(valid_pixel_mask)
+        true = true.masked_select(valid_pixel_mask)
+        dice_loss = 1 - (2.0 * torch.sum(pred * true)) / (torch.sum(pred + true) + 1e-7)
+
+        return (0.5 * xe_loss.long()) + (0.5 * dice_loss)
+
+#### Performance Metric
+
+I used the same performance metric (Jaccard index / Intersection Over Union) as the blog post to evaluate our model. There were no issues with it.
+
 #### Troubleshooting During Training
 
 I ran into a lot of issues when trying to train the models. I will go through them here.
@@ -252,14 +332,13 @@ The "best model" is the checkpointed model based on the best performance on our 
 
 #### Deploying the Model
 
+I had an issue with passing environment variables to the deployed endpoint. I wanted to do this because I wanted to create a notebook that could train multiple models, take the best model, and then pass environment variables that help recreate the best model (architecture) to the inference endpoint. I was not able to figure this out since the SageMaker documentation on inference is quite bad and I could not get in touch with anyone at AWS who could help.
+
+I looked at the CloudWatch logs to figure things out and the closest I could get was to make sure to add `SM_HP_` when using `os.environ[SM_HP_{hyperparameter}]`, but even that didn't work.
 
 #### Inference with SageMaker
 
 
-
-I had an issue with passing environment variables to the deployed endpoint. I wanted to do this because I wanted to create a notebook that could train multiple models, take the best model, and then pass environment variables that help recreate the best model (architecture) to the inference endpoint. I was not able to figure this out since the SageMaker documentation on inference is quite bad and I could not get in touch with anyone at AWS who could help.
-
-I looked at the CloudWatch logs to figure things out and the closest I could get was to make sure to add `SM_HP_` when using `os.environ[SM_HP_{hyperparameter}]`, but even that didn't work.
 
 ### Refinement
 
