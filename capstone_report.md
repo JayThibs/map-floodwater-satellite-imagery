@@ -84,10 +84,6 @@ After looking at our data, there were no abnormalities we needed to fix in the d
 Note: we could have added additional data from the Microsoft Planetary Computer to augment our dataset with information about things such as elevation, but you need to ask for special permission from Microsoft to have access. I gained access and I was able to work with the data in Colab, but I left it out of SageMaker since the project reviewer will not have access.
 
 ### Exploratory Visualization
-In this section, you will need to provide some form of visualization that summarizes or extracts a relevant characteristic or feature about the data. The visualization should adequately support the data being used. Discuss why this visualization was chosen and how it is relevant. Questions to ask yourself when writing this section:
-- _Have you visualized a relevant characteristic or feature about the dataset or input data?_
-- _Is the visualization thoroughly analyzed and discussed?_
-- _If a plot is provided, are the axes, title, and datum clearly defined?_
 
 Since the images are not taken in the human visible wavelength range, we need to apply a false color composite if we want to visualize the images. However, this is only for visualization, we will not be using the false color composite images as training data.
 
@@ -104,6 +100,10 @@ Each image has a `chip_id` associated with it. There is
 <img src="./imgs/country-info.png" alt="country-info.png" width="1000" />
 
 Notice how some countries have a lot more chips than others. We will not be taking this into account for our model, but you could imagine that some types of images will be more common in the dataset than others. Therefore, it may be that the model performs well on US data (for example), but performs poorly on Bolivia data since it simply does not have enough data for that kind of terrain. If we wanted to further fine-tune the model, we could identify the types of locations where the model is performing poorly and work to improve on those kinds of terrains. For example, you could create a specialized model for that kind of data and include it in an ensemble. You could also find those types of images and pre-train a model before fine-tuning it.
+
+Pixel values represent energy that was reflected back to the satellite measured in decibels. To better visualize the bands or channels of Sentinel-1 images, we will create a false color composite by treating the two bands and their ratio as red, green, and blue channels, respectively. The yellow indicates missing values. The teal blue in the right image indicates the water label mask we are trying to predict.
+
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/polarization-with-mask-overlay.png" alt="polarization-with-mask-overlay.png" width="800" />
 
 ### Algorithms and Techniques
 In this section, you will need to discuss the algorithms and techniques you intend to use for solving the problem. You should justify the use of each one based on the characteristics of the problem and the problem domain. Questions to ask yourself when writing this section:
