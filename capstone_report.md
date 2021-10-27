@@ -332,13 +332,135 @@ The "best model" is the checkpointed model based on the best performance on our 
 
 #### Deploying the Model
 
+To deploy a PyTorch model in SageMaker, we need to create 4 special methods that SageMaker recognizes: 
+
+* The `model_fn` method needs to load the PyTorch model from the saved weights from disk.
+* The `input_fn` method needs to deserialze the invoke request body into an object we can perform prediction on.
+* The `predict_fn` method takes the deserialized request object and performs inference against the loaded model.
+* The `output_fn` method takes the result of prediction and serializes this according to the response content type.
+
+Source for above: https://course19.fast.ai/deployment_amzn_sagemaker.html
+
+Here's the `serve/inference.py` script:
+
+        import json
+        import torch
+        import numpy as np
+        import os
+        from io import BytesIO
+
+        from model import FloodModel
+
+
+        def model_fn(model_dir):
+            print("Loading model...")
+            model = FloodModel()
+            with open(os.path.join(model_dir, 'model.pth'), 'rb') as f:
+                model.load_state_dict(torch.load(f))
+                print("Finished loading model.")
+            return model
+
+
+        def input_fn(request_body, request_content_type):
+            print("Accessing data...")
+            assert request_content_type == 'application/x-npy'
+            load_bytes = BytesIO(request_body)
+            data = np.load(load_bytes, allow_pickle=True)
+            print("Data has been stored.")
+            return data
+
+
+        def predict_fn(data, model):
+            print("Predicting floodwater of SAR images...")
+            with torch.no_grad():
+                prediction = model.predict(data)
+            print("Finished prediction.")
+            return prediction
+
+
+        def output_fn(predictions, content_type):
+            print("Saving prediction for output...")
+            assert content_type == 'application/json'
+            res = predictions.astype(np.uint8)
+            res = json.dumps(res.tolist())
+            print("Saved prediction, now sending data back to user.")
+            return res
+
+We also need to create a special inference version of our PyTorch model so that we can instantiate it in `model_fn` and call it in `predict_fn`. For this, we created the `serve/model.py` script:
+
+    import numpy as np
+    import torch
+    import pytorch_lightning as pl
+    import segmentation_models_pytorch as smp
+    import os
+
+    pl.seed_everything(9)
+
+    class FloodModel(pl.LightningModule):
+        def __init__(self):
+            super().__init__()
+            print("Instantiating model...")
+            self.architecture = 'Unet' # os.environ['SM_MODEL_ARCHITECTURE']
+            self.backbone = "efficientnet-b0"
+            cls = getattr(smp, self.architecture)
+            self.model = cls(
+               encoder_name=self.backbone,
+               encoder_weights=None,
+               in_channels=2,
+               classes=2,
+            )
+            print("Model instantiated.")
+
+        def forward(self, image):
+            # Forward pass
+            print("Forward pass...")
+            return self.model(image)
+
+        def predict(self, x_arr):
+            print("Predicting...")
+            # Switch on evaluation mode
+            self.model.eval()
+            torch.set_grad_enabled(False)
+
+            # Perform inference
+            preds = self.forward(torch.from_numpy(x_arr))
+            preds = torch.softmax(preds, dim=1)[:, 1]
+            preds = (preds > 0.5) * 1
+            print("Finished performing inference.")
+            return preds.detach().numpy().squeeze().squeeze()
+
 I had an issue with passing environment variables to the deployed endpoint. I wanted to do this because I wanted to create a notebook that could train multiple models, take the best model, and then pass environment variables that help recreate the best model (architecture) to the inference endpoint. I was not able to figure this out since the SageMaker documentation on inference is quite bad and I could not get in touch with anyone at AWS who could help.
 
 I looked at the CloudWatch logs to figure things out and the closest I could get was to make sure to add `SM_HP_` when using `os.environ[SM_HP_{hyperparameter}]`, but even that didn't work.
 
 #### Inference with SageMaker
 
+Once the model has been deployed, we can send data to the model endpoint for prediction. When we send data to the endpoint with `predictor.predict(data)`, we need to make sure that we properly serialize and deserialize the data. This was a big issue for this project because our image data was too big to be sent via JSON. When converting a numpy ndarray into a JSON, the size of the data increases. In SageMaker, there is a limit of 5 MB that can be sent per request. Our data was closer to 10 MB when sent as a JSON so we could not send the data in that format. We also had a hard time sending the data as a pure GeoTIFF image because the serialization methods in SageMaker only allow for JPEG, PNG or "application/x-image" (which also did not work). I did not think it would be wise to convert the GeoTIFFs in another image format.
 
+Luckily, you have a few different serialization options in SageMaker (and worst case, you can create your own custom serializer). After trying multiple different serialization approaches, I realized that the best approach was to use the NumpySerializer and the JSONDeserializer. That means that our data is sent to the endpoint as a numpy ndarray and then we need to make sure to convert the predictions as a JSON before sending it back. We were lucky that there was no issue with using JSONDeserializer.
+
+This is how we deployed the model:
+
+    from sagemaker.serializers import NumpySerializer
+    from sagemaker.deserializers import JSONDeserializer
+    predictor = inference_model.deploy(
+        initial_instance_count=1,
+        instance_type=instance_type,
+        endpoint_name=endpoint_name,
+        serializer=NumpySerializer(),
+        deserializer=JSONDeserializer(),
+        wait=True,
+    )
+    
+Before sending the data for prediction, we do all the preprocessing necessary to convert the two polarized images into a single numpy ndarray.
+
+Finally, I want to note that I also created a web app that was able to interact with the endpoint and received prediction results. I used the SageMaker Python SDK for send requests to the endpoint rather than setting up a Lambda Function with API Gateway. After setting up my AWS credentials on my local machine, I can send requests to the endpoint by simply calling:
+
+    predictor = Predictor(
+        ENDPOINT_NAME,
+        serializer=NumpySerializer(),
+        deserializer=JSONDeserializer(),
+    )
 
 ### Refinement
 
@@ -377,11 +499,15 @@ In this section, the final model and any supporting qualities should be evaluate
 - _Is the model robust enough for the problem? Do small perturbations (changes) in training data or the input space greatly affect the results?_
 - _Can results found from the model be trusted?_
 
+
+
 ### Justification
 In this section, your model’s final solution and its results should be compared to the benchmark you established earlier in the project using some type of statistical analysis. You should also justify whether these results and the solution are significant enough to have solved the problem posed in the project. Questions to ask yourself when writing this section:
 - _Are the final results found stronger than the benchmark result reported earlier?_
 - _Have you thoroughly analyzed and discussed the final solution?_
 - _Is the final solution significant enough to have solved the problem?_
+
+
 
 
 ## V. Conclusion
