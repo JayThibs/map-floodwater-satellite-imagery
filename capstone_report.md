@@ -129,13 +129,8 @@ The blog post ended up with a validation IOU of 0.3069. I ended up with 0.32162.
 The benchmark model is a U-Net model with a ResNet34 as the backbone of the model. This model performs well in most cases when it comes to semantic segmentation tasks. The model starts out as a typical vision model as the backbone (in this case ResNet34), and then that serves as input to the remaining layers which are in a U-Net architecture. This type of model is often what people use when starting a semantic segmentation project and they want to quickly build an end-to-end pipeline. Therefore, it's the perfect model to choose as a benchmark.
 
 ## III. Methodology
-_(approx. 3-5 pages)_
 
 ### Data Preprocessing
-In this section, all of your preprocessing steps will need to be clearly documented, if any were necessary. From the previous section, any of the abnormalities or characteristics that you identified about the dataset will be addressed and corrected here. Questions to ask yourself when writing this section:
-- _If the algorithms chosen require preprocessing steps like feature selection or feature transformations, have they been properly documented?_
-- _Based on the **Data Exploration** section, if there were abnormalities or characteristics that needed to be addressed, have they been properly corrected?_
-- _If no preprocessing is needed, has it been made clear why?_
 
 Before model training, we need to prepare the data in a specific way.
 
@@ -148,6 +143,123 @@ In this section, the process for which metrics, algorithms, and techniques that 
 - _Is it made clear how the algorithms and techniques were implemented with the given datasets or input data?_
 - _Were there any complications with the original metrics or techniques that required changing prior to acquiring a solution?_
 - _Was there any part of the coding process (e.g., writing complicated functions) that should be documented?_
+
+#### Training a Model in SageMaker
+
+In the notebook, we have the option of either training a single model with `Estimator.fit()` or training multiple models with `HyperparameterTuner`. I trained models with both methods.
+
+In the case of the `HyperparameterTuner`, you need to pass the hyperparameters for your models in a special way. You start by choosing which hyperparameters you want to tune by giving that hyperparameter more than one option. For example, I wanted to test out which architecture would perform the best, so I give it model two choices:
+
+    hyperparameter_ranges = {"architecture": CategoricalParameter(["Unet", "DeepLabV3"])}
+    
+And then, you create another dictionary containing the hyperparameters that won't be changing during the tuning job:
+
+    hparams = {
+    "backbone": "efficientnet-b0",
+    "weights": "imagenet",
+    "lr": 1e-3,
+    "min_epochs": 6,
+    "max_epochs": 40,
+    "patience": 5,
+    "batch_size": 8, # reduce batch_size if you get CUDA error
+    "num_workers": 8,
+    "val_sanity_checks": 0,
+    "output_path": "model-outputs",
+    "log_path": "tensorboard_logs"
+    }
+
+Once you have all of those values, you can include it in the `HyperparameterTuner` object to instantiate our `tuner`:
+
+    tuner = HyperparameterTuner(
+    estimator,
+    objective_metric_name,
+    hyperparameter_ranges,
+    metric_definitions,
+    max_jobs=2,
+    max_parallel_jobs=1,
+    strategy="Random",
+    objective_type=objective_type,
+    base_tuning_job_name='floodwater-tuning'
+    )
+    
+Once you have your `tuner`, you can call `tuner.fit()` by passing the inputs:
+
+    inputs = {'data_s3_uri': data_s3_uri, 'train_features': features_path, 'train_labels': labels_path}
+
+    tuner.fit(inputs=inputs, wait=True)
+
+#### Training Code
+
+When writing a `train.py` file for hyperparameter tuning in SageMaker, you need to be careful about how you pass your hyperparameters to the model. If you've passed the hyperparameters to `HyperparameterTuner`, then you need to parse the hyperparameters for training like so:
+
+    ## Below is only used when we are running a Hyperparameter Tuning job.
+    
+    # hyperparameters sent by the client are passed as command-line arguments to the script.
+    parser.add_argument('--architecture', type=str, default=os.environ['SM_HP_ARCHITECTURE'])
+    parser.add_argument('--backbone', type=str, default=os.environ['SM_HP_BACKBONE'])
+    parser.add_argument('--weights', type=str, default=os.environ['SM_HP_WEIGHTS'])
+    parser.add_argument('--lr', type=float, default=os.environ['SM_HP_LR'])
+    parser.add_argument('--min_epochs', type=int, default=os.environ['SM_HP_MIN_EPOCHS'])
+    parser.add_argument('--max_epochs', type=int, default=os.environ['SM_HP_MAX_EPOCHS'])
+    parser.add_argument('--patience', type=int, default=os.environ['SM_HP_PATIENCE'])
+    parser.add_argument('--batch_size', type=int, default=os.environ['SM_HP_BATCH_SIZE'])
+    parser.add_argument('--num_workers', type=int, default=os.environ['SM_HP_NUM_WORKERS'])
+    parser.add_argument('--val_sanity_checks', type=int, default=os.environ['SM_HP_VAL_SANITY_CHECKS'])
+    parser.add_argument('--log_path', type=str, default=os.environ["SM_HP_LOG_PATH"])
+    
+However, for this project, there is something that causes an error if you pass it as a "hyperparameter", and that is the training metadata dataframe. Because our training is done in a Docker container outside of the SageMaker notebook, we can't simply pass our training data as a "hyperparameter" like we can in Colab or another notebook that doesn't use Docker. Why would we want to pass the training data as a "hyperparameter" anyways? It's easier. In a regular notebook, we can actually pass a dataframe inside of a python dictionary, but we cannot do that when doing a training run in SageMaker. That is why we need to load the training metadata dataframe inside the `train.py` file and _then_ add it to the `hparams` dictionary for training.
+
+#### Implementation of the Model
+
+We are using the `segmentation_model.pytorch` package to fine-tune some pre-trained models. In order to train different types of model with our HyperparameterTuner, I needed to instantiate the model like this:
+
+    cls = getattr(smp, self.architecture)
+    model = cls(
+       encoder_name=self.backbone,
+       encoder_weights=self.weights,
+       in_channels=2,
+       classes=2,
+    )
+    
+In other words, we grab either architecture with `getattr(smp, self.architecture)` and then instantiate it with `cls(...)`.
+
+#### Troubleshooting During Training
+
+I ran into a lot of issues when trying to train the models. I will go through them here.
+
+**CUDA Error**: If you are getting a CUDA error that says something like "CUDA_ERROR_ILLEGAL_ADDRESS: an illegal memory access was encountered.", this can likely be resolved by reducing the batch_size. I was using batch_size of 32 with ml.p2.xlarge and the model was training fine, but when I started using ml.p3.2xlarge, I kept getting that error. It was only after I reduced the batch_size to 8 that I was able to resolve the issue.
+
+**Using big models:** You might also get a CUDA error if you use a different model architecture. The bigger the model, the more likely this will happen since you won't be able to store all the model weights in memory. I focused on using simpler models in SageMaker so this issue did not come up often.
+
+**Wrong dtype in your tensors**: If you get an error like Expected Float but got Long, it likely is an issue with your torch version. Older version will often have this issue and you will notice it for CrossEntropy calculations. Therefore, either install a newer version so that you have to worry about that less or make sure to convert your tensors to the correct data types for the operations you want to do on them. CrossEntropy needs to have float values in older torch versions. There are also some specific methods like calculating the tensor Mean that need to have a tensor of floats rather than Long.
+
+#### Saving the Best Model
+
+To make sure that we save the best model after training, we need to add the following code to the `train.py` file:
+
+    # Runs model training 
+    ss_flood_model.fit() # orchestrates our model training
+    
+    best_model = FloodModel(hparams=hparams)
+    best_model_path = ss_flood_model.trainer_params["callbacks"][0].best_model_path
+    best_model = best_model.load_from_checkpoint(checkpoint_path=best_model_path)
+    
+    # After model has been trained, save its state into model_dir which is then copied to back S3
+    with open(os.path.join(args.model_dir, 'model.pth'), 'wb') as f:
+        torch.save(best_model.state_dict(), f)
+        
+The "best model" is the checkpointed model based on the best performance on our performance metric (validation IOU). If we do not save the best model properly, we end up saving the last epoch of our model, which could mean that we are saving a model that is overfitting or simply doesn't have as good model weights as the best checkpointed model.
+
+#### Deploying the Model
+
+
+#### Inference with SageMaker
+
+
+
+I had an issue with passing environment variables to the deployed endpoint. I wanted to do this because I wanted to create a notebook that could train multiple models, take the best model, and then pass environment variables that help recreate the best model (architecture) to the inference endpoint. I was not able to figure this out since the SageMaker documentation on inference is quite bad and I could not get in touch with anyone at AWS who could help.
+
+I looked at the CloudWatch logs to figure things out and the closest I could get was to make sure to add `SM_HP_` when using `os.environ[SM_HP_{hyperparameter}]`, but even that didn't work.
 
 ### Refinement
 
