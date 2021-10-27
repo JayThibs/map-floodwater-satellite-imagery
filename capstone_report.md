@@ -1,7 +1,7 @@
 # Machine Learning Engineer Nanodegree
 ## Mapping Floodwater with SAR Imagery Capstone Project
 Jacques Thibodeau  
-October 24th, 2021
+October 26th, 2021
 
 ## I. Definition
 
@@ -38,7 +38,7 @@ So, we will:
 * Do data exploration on the SAR images
 * Preprocess the data
 * Load data to S3
-* Train two models using SageMaker's HyperparameterTuning function
+* Train models using SageMaker's HyperparameterTuning function (in the notebook we commented out the hyperparameter tuning job to reduce runtime)
 * Select the best model for deployment
 * Deploy the model
 * Perform inference on the deployed model in the notebook
@@ -58,11 +58,6 @@ Ref (Performance metric): https://www.drivendata.org/competitions/81/detect-floo
 _(approx. 2-4 pages)_
 
 ### Data Exploration
-In this section, you will be expected to analyze the data you are using for the problem. This data can either be in the form of a dataset (or datasets), input data (or input files), or even an environment. The type of data should be thoroughly described and, if possible, have basic statistics and information presented (such as discussion of input features or defining characteristics about the input or environment). Any abnormalities or interesting qualities about the data that may need to be addressed have been identified (such as features that need to be transformed or the possibility of outliers). Questions to ask yourself when writing this section:
-- _If a dataset is present for this problem, have you thoroughly discussed certain features about the dataset? Has a data sample been provided to the reader?_
-- _If a dataset is present for this problem, are statistics about the dataset calculated and reported? Have any relevant results from this calculation been discussed?_
-- _If a dataset is **not** present for this problem, has discussion been made about the input space or input data for your problem?_
-- _Are there any abnormalities or characteristics about the input space or dataset that need to be addressed? (categorical variables, missing values, outliers, etc.)_
 
 The dataset we’ll be using is a subset of the Sentinel-1 dataset, which contains radar images stored as 512 x 512 pixel GeoTIFFs. In order to train our model to be able to separate floodwater from non-floodwater, we also have label masks that go with every pair of VV and VH images. 
 
@@ -84,11 +79,11 @@ The following quotes are from the DrivenData competition page (Training set - Im
 
 <img src="./imgs/c2s-sar-polarization.jpeg" alt="c2s-sar-polarization" width="1000" />
 
+After looking at our data, there were no abnormalities we needed to fix in the dataset.
+
+Note: we could have added additional data from the Microsoft Planetary Computer to augment our dataset with information about things such as elevation, but you need to ask for special permission from Microsoft to have access. I gained access and I was able to work with the data in Colab, but I left it out of SageMaker since the project reviewer will not have access.
+
 ### Exploratory Visualization
-In this section, you will need to provide some form of visualization that summarizes or extracts a relevant characteristic or feature about the data. The visualization should adequately support the data being used. Discuss why this visualization was chosen and how it is relevant. Questions to ask yourself when writing this section:
-- _Have you visualized a relevant characteristic or feature about the dataset or input data?_
-- _Is the visualization thoroughly analyzed and discussed?_
-- _If a plot is provided, are the axes, title, and datum clearly defined?_
 
 Since the images are not taken in the human visible wavelength range, we need to apply a false color composite if we want to visualize the images. However, this is only for visualization, we will not be using the false color composite images as training data.
 
@@ -106,20 +101,33 @@ Each image has a `chip_id` associated with it. There is
 
 Notice how some countries have a lot more chips than others. We will not be taking this into account for our model, but you could imagine that some types of images will be more common in the dataset than others. Therefore, it may be that the model performs well on US data (for example), but performs poorly on Bolivia data since it simply does not have enough data for that kind of terrain. If we wanted to further fine-tune the model, we could identify the types of locations where the model is performing poorly and work to improve on those kinds of terrains. For example, you could create a specialized model for that kind of data and include it in an ensemble. You could also find those types of images and pre-train a model before fine-tuning it.
 
+Pixel values represent energy that was reflected back to the satellite measured in decibels. To better visualize the bands or channels of Sentinel-1 images, we will create a false color composite by treating the two bands and their ratio as red, green, and blue channels, respectively. The yellow indicates missing values. The teal blue in the right image indicates the water label mask we are trying to predict.
+
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/polarization-with-mask-overlay.png" alt="polarization-with-mask-overlay.png" width="800" />
+
 ### Algorithms and Techniques
-In this section, you will need to discuss the algorithms and techniques you intend to use for solving the problem. You should justify the use of each one based on the characteristics of the problem and the problem domain. Questions to ask yourself when writing this section:
-- _Are the algorithms you will use, including any default variables/parameters in the project clearly defined?_
-- _Are the techniques to be used thoroughly discussed and justified?_
-- _Is it made clear how the input data or datasets will be handled by the algorithms and techniques chosen?_
+
+Our task is to do semantic segmentation of satellite-aperture radar imagery in order to classify each pixel in an image as to whether is contains floodwater or not. The state-of-the-art techniques in this domain involve using a deep learning model where the first portion of the neural network (the backbone/encoder) is a pre-trained model like ResNet34 and we attach a Unet-like architecture to the output of the backbone model.
+
+This is what a Unet architecture looks like:
+
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/satellite-unet.png" width="600" />
+
+A U-Net architecture is divided into two parts: the contracting part which follows the typical CNN architecture which downsamples for classification, followed by an expansive part that upsamples the feature map to an output segmentation map. The second part is crucial for segmentation because in image segmentation we not only need to convert the feature map into a vector but also reconstruct the image from this vector so that we can segment the image.
+
+When training our model, we will be focus on three different configuration changes to improve our model: model architecture (Unet or other model heads like DeepLabV3, UnetPlusPlus, DeepLabV3Plus), backbone model (ResNet34, EfficientNet-b0, xception), and learning rate (0.001, 0.0003, 0.0001). We did several hyperparameter tuning jobs with a combination of all of those configuration possibilities.
+
+To feed the image data to our model, we first have to stack the arrays of the VH and VV images together. Then, we apply a min-max normalization on the input pixel values (unique for our dataset; makes sure we have no negative values and normalizes across pixels), apply data augmentations with the Albumentations package (ex: RandomCrop, RandomRotate90, HorizontalFlip, and VerticalFlip), and then pass those values to our model for training.
+
+I wanted to try creating a final ensemble model of the best models, but it was a bit too complicated to do in SageMaker and wasn't worth the effort.
 
 ### Benchmark
-In this section, you will need to provide a clearly defined benchmark result or threshold for comparing across performances obtained by your solution. The reasoning behind the benchmark (in the case where it is not an established result) should be discussed. Questions to ask yourself when writing this section:
-- _Has some result or value been provided that acts as a benchmark for measuring performance?_
-- _Is it clear how this result or value was obtained (whether by data or by hypothesis)?_
 
-For the benchmark, we will be using the benchmark from the benchmark blog post of the competition: https://www.drivendata.co/blog/detect-floodwater-benchmark/ 
+For the benchmark, we can start by looking at the benchmark from the blog post of the competition: https://www.drivendata.co/blog/detect-floodwater-benchmark/ 
 
-The benchmark model is a U-Net model with a ResNet34 as the backbone of the model. This model performs well in most cases when it comes to semantic segmentation tasks. The model starts out as a typical vision model as the backbone (in this case ResNet34), and then that serves as input to the remaining layers which are in a U-Net architecture. A U-Net architecture is divided into two parts: the contracting part which follows the typical CNN architecture which downsamples for classification, followed by an expansive part that upsamples the feature map to an output segmentation map. The second part is crucial for segmentation because in image segmentation we not only need to convert the feature map into a vector but also reconstruct the image from this vector so that we can segment the image.
+The blog post ended up with a validation IOU of 0.3069. I ended up with 0.32162. Perhaps this was because I trained if for longer. We'll use our performance of 0.32162 as the benchmark.
+
+The benchmark model is a U-Net model with a ResNet34 as the backbone of the model. This model performs well in most cases when it comes to semantic segmentation tasks. The model starts out as a typical vision model as the backbone (in this case ResNet34), and then that serves as input to the remaining layers which are in a U-Net architecture. This type of model is often what people use when starting a semantic segmentation project and they want to quickly build an end-to-end pipeline. Therefore, it's the perfect model to choose as a benchmark.
 
 ## III. Methodology
 _(approx. 3-5 pages)_
@@ -142,6 +150,28 @@ In this section, you will need to discuss the process of improvement you made up
 - _Is the process of improvement clearly documented, such as what techniques were used?_
 - _Are intermediate and final solutions clearly reported as the process is improved?_
 
+I started by training a model using the same configuration as the Benchmark blog post:
+
+* Architecture: Unet
+* Encoder/Backbone model: ResNet34
+* Learning Rate: 0.001
+
+The blog post ended up with a validation IOU of 0.3069. I ended up with 0.32162. Perhaps this was because I trained if for longer.
+
+Afterwards, I wanted to tune the hyperparameters so I trained many models in SageMaker using the Hyperparameter Tuning feature and in Google Colab (we used Weights and Biases to train the models), and we found that the best configuration for our model is the following:
+
+(Best model configuration found using a Weights and Biases Hyperparameter Sweep in Google Colab)
+* Architecture: Unet
+* Encoder/Backbone model: EfficientNet-b0
+* Learning Rate: 0.001
+
+This gave us a validation IOU (our comparison metric) of 0.405 in Colab, which is much better than what was obtained in the benchmark blog post (0.3069).
+
+Here's the results of the hyperparameter sweep we ran with Weights and Biases, the selected hyperparameter curve shows our best model:
+
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/hyperparameter-sweep.png" alt="hyperparameter-sweep" width="800" />
+
+**Final Model:** Our final model that I trained in SageMaker got us a validation IOU of 0.43338 (using the same parameters as the best Colab model), much higher than the benchmark.
 
 ## IV. Results
 _(approx. 2-3 pages)_
