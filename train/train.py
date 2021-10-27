@@ -65,10 +65,6 @@ if __name__ =='__main__':
     
     data_dir = "/opt/ml/input/data/data_s3_uri"
     
-#     print(os.listdir("/opt/ml/input/data/"))
-#     print(os.listdir("/opt/ml/input/data/data_s3_uri"))
-#     print(os.listdir("/opt/ml/input/data/data_s3_uri/train_features"))  
-    
     # Read csv for training
     train_df = pd.read_csv(os.path.join(data_dir, "train_df.csv"))
     train_x = train_df[['chip_id', 'vv_path', 'vh_path']]
@@ -78,12 +74,19 @@ if __name__ =='__main__':
     val_df = pd.read_csv(os.path.join(data_dir, "val_df.csv"))
     val_x = val_df[['chip_id', 'vv_path', 'vh_path']]
     val_y = val_df[['chip_id', 'label_path']]
+    
+    # Read csv for testing
+    test_df = pd.read_csv(os.path.join(data_dir, "test_df.csv"))
+    test_x = test_df[['chip_id', 'vv_path', 'vh_path']]
+    test_y = test_df[['chip_id', 'label_path']]
         
     data_dict = {
         "x_train": train_x,
-        "x_val": val_x,
         "y_train": train_y,
+        "x_val": val_x,
         "y_val": val_y,
+        "x_test": test_x,
+        "y_test": test_y,
     }
     
     hparams = {
@@ -120,6 +123,10 @@ if __name__ =='__main__':
     best_model = FloodModel(hparams=hparams)
     best_model_path = ss_flood_model.trainer_params["callbacks"][0].best_model_path
     best_model = best_model.load_from_checkpoint(checkpoint_path=best_model_path)
+    
+    # run test set
+    result = best_model.test()
+    print(result)
     
     # After model has been trained, save its state into model_dir which is then copied to back S3
     with open(os.path.join(args.model_dir, 'model.pth'), 'wb') as f:

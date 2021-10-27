@@ -52,6 +52,8 @@ class FloodModel(pl.LightningModule):
         self.y_train = self.hparams.get("y_train")
         self.x_val = self.hparams.get("x_val")
         self.y_val = self.hparams.get("y_val")
+        self.x_test = self.hparams.get("x_test")
+        self.y_test = self.hparams.get("y_test")
         self.output_path = self.hparams.get("output_path", "model-outputs")
         self.gpus = self.hparams.get("gpus", False)
 #         print(self.gpus)
@@ -70,6 +72,7 @@ class FloodModel(pl.LightningModule):
             self.x_train, self.y_train, transforms=self.transform
         )
         self.val_dataset = FloodDataset(self.x_val, self.y_val, transforms=None)
+        self.test_dataset = FloodDataset(self.x_test, self.y_test, transforms=None)
         self.model = self._prepare_model()
         self.trainer_params = self._get_trainer_params()
 
@@ -89,16 +92,9 @@ class FloodModel(pl.LightningModule):
         y = batch["label"].long()
         if self.gpus:
             x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
-
         
         # Forward pass
         preds = self.forward(x)
-        
-#         print('training_step checking preds and y')
-#         print(preds)
-#         print(type(preds))
-#         print(y)
-#         print(type(y))
         
         # Calculate training loss
         criterion = XEDiceLoss()
@@ -140,10 +136,38 @@ class FloodModel(pl.LightningModule):
         
         # Log batch IOU
         batch_iou = intersection / union
-#         For newer pl versions:
+        # For newer pl versions:
         self.log(
             "iou", batch_iou, on_step=True, on_epoch=True, prog_bar=True, logger=True
         )
+
+        return batch_iou
+    
+    def test_step(self, batch, batch_idx):
+        # Switch on evaluation mode
+        self.model.eval()
+        torch.set_grad_enabled(False)
+
+        # Load images and labels
+        x = batch["chip"]
+        y = batch["label"].long()
+        if self.gpus:
+            x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
+
+        # Forward pass & softmax
+        preds = self.forward(x)
+        preds = torch.softmax(preds, dim=1)[:, 1]
+        preds = (preds > 0.5) * 1
+
+        # Calculate validation IOU (global)
+        intersection, union = intersection_and_union(preds, y)
+        self.intersection += intersection
+        self.union += union
+        
+        # Log batch IOU
+        batch_iou = intersection / union
+        # For newer pl versions:
+        self.log("test_iou", batch_iou)
 
         return batch_iou
 
@@ -161,6 +185,16 @@ class FloodModel(pl.LightningModule):
         # DataLoader class for training
         return DataLoader(
             self.val_dataset,
+            batch_size=self.batch_size,
+            num_workers=0,
+            shuffle=False,
+            pin_memory=True,
+        )
+    
+    def test_dataloader(self):
+        # DataLoader class for training
+        return DataLoader(
+            self.test_dataset,
             batch_size=self.batch_size,
             num_workers=0,
             shuffle=False,
