@@ -124,10 +124,6 @@ if __name__ =='__main__':
     best_model_path = ss_flood_model.trainer_params["callbacks"][0].best_model_path
     best_model = best_model.load_from_checkpoint(checkpoint_path=best_model_path)
     
-    # run test set
-    result = best_model.test()
-    print(result)
-    
     # After model has been trained, save its state into model_dir which is then copied to back S3
     with open(os.path.join(args.model_dir, 'model.pth'), 'wb') as f:
         torch.save(best_model.state_dict(), f)

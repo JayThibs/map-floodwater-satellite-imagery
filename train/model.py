@@ -169,8 +169,6 @@ class FloodModel(pl.LightningModule):
         # For newer pl versions:
         self.log("test_iou", batch_iou)
 
-        return batch_iou
-
     def train_dataloader(self):
         # DataLoader class for training
         return DataLoader(
@@ -262,15 +260,11 @@ class FloodModel(pl.LightningModule):
             mode=mode,
             verbose=True,
         )
-        
-        # Removing for now since it causes a recursion error
-#         multiplicative = lambda epoch: 1.1
-#         backbone_finetuning = BackboneFinetuning(5, multiplicative)
 
         # Specify where Tensorboard logs will be saved
         self.log_path = Path.cwd() / self.hparams.get("log_path", "tensorboard-logs")
         self.log_path.mkdir(exist_ok=True)
-        logger = TensorBoardLogger(self.log_path, name="resnet-model")
+        logger = TensorBoardLogger(self.log_path, name="efficientnet-b0-model")
 #         wandb_logger = WandbLogger(project="Driven-Data-Floodwater-Mapping", entity="effective-altruism-techs")
         
         trainer_params = {
@@ -289,3 +283,5 @@ class FloodModel(pl.LightningModule):
         # Set up and fit Trainer object
         self.trainer = pl.Trainer(**self.trainer_params)
         self.trainer.fit(self)
+        result = self.trainer.test()
+        print(result)
