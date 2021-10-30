@@ -543,11 +543,3 @@ In this section, you will summarize the entire end-to-end problem solution and d
 * Storing the predictions in a database.
 * Setup a lambda + API Gateway endpoint to reduce the cost per API call.
 * Send a continuous stream of images through our model endpoint as if we are using the endpoint to predict flooding in real-time in order to save lives and reduce damages.
-
-
-
------------
-
-**Before submitting, ask yourself. . .**
-
-- Have you properly proof-read your project report to assure there are minimal grammatical and spelling mistakes?
