@@ -1,7 +1,7 @@
 # Machine Learning Engineer Nanodegree
 ## Mapping Floodwater with SAR Imagery Capstone Project
 Jacques Thibodeau  
-October 26th, 2021
+October 31st, 2021
 
 ## I. Definition
 
@@ -490,7 +490,6 @@ I also tried different data augmentation configurations, but I wasn't getting be
 **Final Model:** Our final model that I trained in SageMaker got us a validation IOU of 0.435 (using the same parameters as the best Colab model), much higher than the benchmark.
 
 ## IV. Results
-_(approx. 2-3 pages)_
 
 ### Model Evaluation and Validation
 
@@ -565,13 +564,14 @@ If we want to be able to predict where exactly floodwater is via satellite image
 All-in-all, we were able to build a decent model with an end-to-end notebook. Since this is a difficult task which is still being actively researched, we couldn't expect +99% accuracy like we would for a cats and dogs classifier.
 
 ## V. Conclusion
-_(approx. 1-2 pages)_
 
 ### Free-Form Visualization
-In this section, you will need to provide some form of visualization that emphasizes an important quality about the project. It is much more free-form, but should reasonably support a significant result or characteristic about the problem that you want to discuss. Questions to ask yourself when writing this section:
-- _Have you visualized a relevant or important quality about the problem, dataset, input data, or results?_
-- _Is the visualization thoroughly analyzed and discussed?_
-- _If a plot is provided, are the axes, title, and datum clearly defined?_
+
+As was shown in the results section, I created a web app that can send a request to the endpoint and get back a prediction. The web app provides us a visualization of the prediction result, which is quite useful to actually see the predicted floodwater.
+
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/st-prediction-efficientnet-b0-plot.png" alt="st-prediction-efficientnet-b0-plot.png" width="800" />
+
+If we were to use this model in a company, we would want to have a real-time version of this visualization (minus the ground truth since we wouldn't have one) so that we can pinpoint where there is flooding and then act accordingly.
 
 ### Reflection
 In this section, you will summarize the entire end-to-end problem solution and discuss one or two particular aspects of the project you found interesting or difficult. You are expected to reflect on the project as a whole to show that you have a firm understanding of the entire process employed in your work. Questions to ask yourself when writing this section:
@@ -579,6 +579,67 @@ In this section, you will summarize the entire end-to-end problem solution and d
 - _Were there any interesting aspects of the project?_
 - _Were there any difficult aspects of the project?_
 - _Does the final model and solution fit your expectations for the problem, and should it be used in a general setting to solve these types of problems?_
+
+I'll start by going over the entire end-to-end project.
+
+**Preparing the data for SageMaker**
+
+To prepare the data, I first needed to download the images and metadata from the Driven Data Competition and upload it to S3 as a zip file. Once the data was stored, I could download the data into my SageMaker workspace and start working with the data.
+
+I was then able to explore the data and better understand the properties of the GeoTIFF format. I looked at the particulars of the project data, and then moved on to prepare the data for model training.
+
+To prepare the data, I split the dataset into training, validation, test sets, and then uploaded those files along with the metadata file that contains the filepaths for the images.
+
+**Preparing the training code for use in SageMaker**
+
+To prepare the model, I had to create several files for training:
+
+* I created the `train.py` file to grab the hyperparameters that will be used for training, grab the data, fit the model, and then save the best model.
+* I created the `dataset.py` file which prepares and loads the torch data onto GPU for model training.
+* I created the `model.py` file that contains the model we use for training. The model used depends on what we choose. I used the `segmentation_models.pytorch` to easily create state-of-the-art segmentation models. To build the model, I used PyTorch Lightning since it removes all the boilerplate code that comes with pure PyTorch and just makes training a lot easier and less bug-prone.
+* I created the `loss_functions.py` file because our model needs a loss function so that it can update its model weights. I used a custom loss function which combines Binary Cross-Entropy Loss and Dice Loss.
+* I created the `metrics.py` to measure the model's performance. This is the metric that is human-understandable. I used the Intersection Over Union metric (Jaccard index) to measure model performance.
+* I created the `requirements.txt` file so that the Docker container used to train our model in SageMaker can properly install all the packages that we need for training.
+
+**Training 2 models using HyperparameterTuning and choosing the best model**
+
+Instead of only training one model, I decided to make use of SageMaker HyperparameterTuning feature which allows us to train multiple models by passing the sets of hyperparameters we'd like to train the model on. Once the models were trained, we can look at the results and choose the best model.
+
+Note: I also trained a lot of models in Google Colab in order to save on compute costs in SageMaker. I trained those models using Weights and Biases since it allowed me to easily do a hyperparameter tuning job (they call them hyperparameter sweeps).
+
+**Doing inference on the image (.tif) data**
+
+To do inference, I needed to create a special `inference.py` file that allows the deployed endpoint to use PyTorch for inference. I also needed to create a new `model.py` file which contained an inference version of the model I created for training. The inference model contains a predict method and doesn't bother including all other special methods that come with PyTorch Lightning.
+
+After setting up the `serve` directory, I was able to deploy the model and get predictions from the model in the notebook and with the Streamlit app I created.
+
+For the predictions to work, I needed to make sure that the data was prepared properly and could be serialized to the endpoint and then deserialized from it. Instead of sending the examples for predictions as images or a JSON, I send the data as a Numpy ndarray of the pixel data.
+
+Once a prediction is returned, we can plot the results of the predicted image to see how well it did visually.
+
+**Creating a Streamlit app to do inference**
+
+As an addition to the notebook, I created a Streamlit app that can be used to load images we want to predict, send a request to the deployed model endpoint, and then get back the predicted floodwater image. Here's what the app looks like:
+
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/st-load-images.png" alt="st-load-images" width="500"/>
+
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/st-prediction-efficientnet-b0.png" alt="st-prediction-efficientnet-b0.png" width="500"/>
+
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/st-note-try-new-images.png" alt="st-note-try-new-images.png" width="500"/>
+
+**Difficult Aspects**
+
+There were quite a few difficulties I came across during this project. The most unique one for this particular project was that I was working with GeoTIFFs and those are images that are difficult to work with when doing inference in SageMaker. 
+
+First of all, I needed to send two images for one prediction so I needed to get a bit creative as to how I wanted to send the data to the endpoint. SageMaker seems to only allow users to send one image at a time. You can send batches to get batch inference, but that is different from sending two images for one prediction. Even if I wanted to send the image data to the endpoint, SageMaker doesn't support the GeoTIFF file format.
+
+Then, when I want to convert the images into JSON for inference, the images were too big in size and therefore the JSON had too many bytes to be sent to the endpoint (SageMaker has a limit).
+
+Ultimately, I solved this problem by sending the data as a Numpy ndarray. I needed to stack the pixel data from both images so that I could send as one piece of data.
+
+**Does this solution meet expectations?**
+
+If I were to actually deploy a model like this in a live production setting, I'd want to spend some more time improving the model first. The next steps would be to add supplementary data and create an ensemble model. As a project that gets us an end-to-end solution, it's exactly what I was expecting and I learned a lot.
 
 ### Improvement
 
