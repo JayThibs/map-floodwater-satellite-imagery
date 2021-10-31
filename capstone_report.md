@@ -139,10 +139,6 @@ First, we split the data (with a random seed) to create a training set and a val
 To feed the image data to our model, we read the images as numpy arrays and then we have to stack the arrays of the VH and VV images together. Then, we apply a min-max normalization on the input pixel values (unique for our dataset; makes sure we have no negative values and normalizes across pixels), apply data augmentations with the Albumentations package (ex: RandomCrop, RandomRotate90, HorizontalFlip, and VerticalFlip), and then pass those values to our model for training.
 
 ### Implementation
-In this section, the process for which metrics, algorithms, and techniques that you implemented for the given data will need to be clearly documented. It should be abundantly clear how the implementation was carried out, and discussion should be made regarding any complications that occurred during this process. Questions to ask yourself when writing this section:
-- _Is it made clear how the algorithms and techniques were implemented with the given datasets or input data?_
-- _Were there any complications with the original metrics or techniques that required changing prior to acquiring a solution?_
-- _Was there any part of the coding process (e.g., writing complicated functions) that should be documented?_
 
 #### Training a Model in SageMaker
 
@@ -263,6 +259,10 @@ If we focus on the training part, though, we see in `training_step` that our mod
         return xe_dice_loss
 
 We keep going through each batch of the data. Once we have gone through all the batches, we've finished the epoch and we can calculate the model performance by seeing how well it performs on the validation data.
+
+#### Changes in the Model
+
+The biggest change we did after training several models was to use EfficientNet-b0 as the backbone model instead of a ResNet34.
 
 #### Loss Function
 
@@ -499,7 +499,63 @@ In this section, the final model and any supporting qualities should be evaluate
 - _Is the model robust enough for the problem? Do small perturbations (changes) in training data or the input space greatly affect the results?_
 - _Can results found from the model be trusted?_
 
+#### Why was the final model chosen?
 
+After training several models via hyperparameter tuning, we ended up choosing the Unet+EfficientNet-b0 architecture for our model. This model performed the best on the validation set, so that is why we chose it.
+
+#### Which types of examples is the model good or bad at?
+
+What I've noticed after looking at the results of a few images: the model is good at predicting floodwater if there is a whole lot in the image, but it is not always accurate at predicting the correct shape of the floodwater. If there isn't much floodwater in the image or the floodwater is not too prominent, it can totally miss the floodwater.
+
+As you can see here, the model did a fairly great job at predicting the floodwater and its shape:
+
+**Image 1**
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/st-prediction-efficientnet-b0-plot.png" alt="st-prediction-efficientnet-b0-plot.png" width="800" />
+
+However, you can see in this image that while the model got a decent IOU score (Intersection Over Union), but it's just assuming that there is floodwater everywhere:
+
+**Image 2**
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/pxs10-no-transforms.png" alt="pxs10-no-transforms.png" width="800" />
+
+The model seems good at knowing if there is a lot of floodwater, but still needs improvement at figuring out the shape of the floodwater.
+
+Below is an example of an image with very little floodwater. The model is quite bad at detecting these faint signs of floodwater:
+
+**Image 3**
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/qxb32-no-transforms.png" alt="qxb32-no-transforms.png" width="800" />
+
+Image 2 and 3 were tested after applying data transforms. The results are in the following section.
+
+#### Model Robustness
+
+To check our model's performance, we created a test set that we use to evaluate the model after training. We do not have access to the competition test set so we had to take away from the validation set to create a small test set. The model wasn't performing as well on the test set as it was on the validation set. There is definitely improvement needed so that the model can do just as well on unseen data. Our final model got the following results (better in both cases as the benchmark blog post):
+
+* Validation set: 0.435
+* Test set: 0.31045
+
+We also added data transformations to the test images to see how well the model would perform if we did some basic alterations to the image like flipping it vertically using the albumentations package. Our model will usually perform either worse after such transformations or perform just as well as without any transformation. Below are a few examples where we test our model's performance while using these transformations:
+
+Image 2, no transforms.
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/pxs10-no-transforms.png" alt="pxs10-no-transforms.png" width="800" />
+
+Image 2, vertical flip. Performance doesn't change.
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/pxs10-vert.png" alt="pxs10-no-transforms.png" width="800" />
+
+Image 2, horizontal and vertical flip.  Performance is lower and floodwater shape changed.
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/pxs10-hori-vert.png" alt="pxs10-hori-vert.png" width="800" />
+
+Image 3, no transforms.
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/qxb32-no-transforms.png" alt="qxb32-no-transforms.png" width="800" />
+
+Image 3, 90 degree rotation.
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/qxb32-90.png" alt="qxb32-no-transforms.png" width="800" />
+
+Image 3, vertical flip. Performance is lower, but it was already low to begin with.
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/main/imgs/qxb32-no-transforms.png" alt="qxb32-no-transforms.png" width="800" />
+
+#### Can the model be trusted?
+
+Not really. There is still a lot of improvement left to do on this project, but that is also expected since this is a difficult problem. I have some ideas I was not able to implement while doing this project that could improve the performance and robustness of the model; I mention those in the conclusion. I would not put this model in production until the model performance has improved. The only thing I'd say is that the model _might_ be decent enough to detect large amounts of floodwater and if there is no floodwater at all. If this is the case, then the model may be good enough depending how crucial it is to predict the floodwater shape accurately. But it still needs improvement at figuring out the shape of the floodwater and detecting more obscure and small amounts of floodwater.
 
 ### Justification
 In this section, your model’s final solution and its results should be compared to the benchmark you established earlier in the project using some type of statistical analysis. You should also justify whether these results and the solution are significant enough to have solved the problem posed in the project. Questions to ask yourself when writing this section:
@@ -534,7 +590,7 @@ In this section, you will summarize the entire end-to-end problem solution and d
 * If we use an ensembled model, we can decide to use the max value of either model in the ensemble since this will bias towards predicting floodwater. Based on the predictions we get from the model, it seems that the model is more likely to miss predicting floodwater over non-floodwater. Therefore, it would make sense to choose the max in case one of the models is predicting floodwater and another one (incorrectly) isn't.
 * The models added to the ensemble could also be something like a [CatBoostedClassifier](https://catboost.ai/en/docs/concepts/python-reference_catboostclassifier) that predicts every pixel. From their website: "CatBoost is a machine learning algorithm that uses gradient boosting on decision trees."
 * Train many more models using different albumentations, backbone models, architectures (head), and loss functions.
-* We could use the additional data from Microsoft Planetary Computer. In particular, the Nasadem band is an incredibly important.
+* We could use the additional data from Microsoft Planetary Computer. In particular, the Nasadem band is an incredibly important. It's also worth pointing out that I did try also installing GDAL to the SageMaker notebook (it's needed to add the additional data), but I would have needed to fiddle with the AWS environment and this would have led to a long installation time for the reviewer as well as added additional steps (you wouldn't be able to simply run the notebook).
 * We could pre-train a deep learning model on Satellite-Aperture Radar (SAR) images because the current backbone/encoder models used in Semantic Segmentation are pre-trained on imagenet (a large image dataset), which does not have SAR images. This means that the model weights of ResNet34 or EfficientNet-b0 were not updated to recognize SAR images. Therefore, if we pre-train a model on a large dataset of SAR images, we could expect that the model we fine-tune with that pre-trained model will perform a lot better than a pre-trained imagenet model.
 
 **For our web app:**
