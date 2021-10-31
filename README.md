@@ -1,5 +1,7 @@
 # Map Floodwater of SAR Imagery with SageMaker
 
+A report of the entire project can be found [here](https://github.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/blob/main/capstone_report.md).
+
 This repository focuses on training semantic segmentation models to predict the presence of floodwater for disaster prevention. The repository contains code from our submission to the STAC Overflow: Map Floodwater from Radar Imagery competition on DrivenData.org.
 
 ![c2s-sentinel-1](./imgs/c2s-sentinel-1.jpeg)
