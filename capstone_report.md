@@ -3,9 +3,14 @@
 Jacques Thibodeau  
 October 31st, 2021
 
+
 ## I. Definition
 
 ### Project Overview
+
+**The Streamlit Web App that makes Predictions with SageMaker Model Endpoint:**
+
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-satellite-imagery/main/imgs/st-prediction-efficientnet-b0.png" alt="st-prediction-efficientnet-b0.png" width="500" />
 
 Floods have always led to terrible tragedies. Over the centuries, humanity has learned to build infrastructure to prevent floods, yet many people still suffer and die from floods.
 
