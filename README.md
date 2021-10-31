@@ -2,7 +2,7 @@
 
 A report of the entire project can be found [here](https://github.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/blob/main/capstone_report.md).
 
-** Here's a view of the Streamlit Web App that makes predictions with SageMaker model endpoint:**
+**Here's a view of the Streamlit Web App that makes predictions with SageMaker model endpoint:**
 
 <img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-satellite-imagery/main/imgs/st-prediction-efficientnet-b0.png" alt="st-prediction-efficientnet-b0.png" width="500" />
 
