@@ -487,17 +487,12 @@ Here's the results of the hyperparameter sweep we ran with Weights and Biases, t
 
 I also tried different data augmentation configurations, but I wasn't getting better results so I stuck with the ones I have.
 
-**Final Model:** Our final model that I trained in SageMaker got us a validation IOU of 0.43338 (using the same parameters as the best Colab model), much higher than the benchmark.
+**Final Model:** Our final model that I trained in SageMaker got us a validation IOU of 0.435 (using the same parameters as the best Colab model), much higher than the benchmark.
 
 ## IV. Results
 _(approx. 2-3 pages)_
 
 ### Model Evaluation and Validation
-In this section, the final model and any supporting qualities should be evaluated in detail. It should be clear how the final model was derived and why this model was chosen. In addition, some type of analysis should be used to validate the robustness of this model and its solution, such as manipulating the input data or environment to see how the model’s solution is affected (this is called sensitivity analysis). Questions to ask yourself when writing this section:
-- _Is the final model reasonable and aligning with solution expectations? Are the final parameters of the model appropriate?_
-- _Has the final model been tested with various inputs to evaluate whether the model generalizes well to unseen data?_
-- _Is the model robust enough for the problem? Do small perturbations (changes) in training data or the input space greatly affect the results?_
-- _Can results found from the model be trusted?_
 
 #### Why was the final model chosen?
 
@@ -558,13 +553,16 @@ Image 3, vertical flip. Performance is lower, but it was already low to begin wi
 Not really. There is still a lot of improvement left to do on this project, but that is also expected since this is a difficult problem. I have some ideas I was not able to implement while doing this project that could improve the performance and robustness of the model; I mention those in the conclusion. I would not put this model in production until the model performance has improved. The only thing I'd say is that the model _might_ be decent enough to detect large amounts of floodwater and if there is no floodwater at all. If this is the case, then the model may be good enough depending how crucial it is to predict the floodwater shape accurately. But it still needs improvement at figuring out the shape of the floodwater and detecting more obscure and small amounts of floodwater.
 
 ### Justification
-In this section, your model’s final solution and its results should be compared to the benchmark you established earlier in the project using some type of statistical analysis. You should also justify whether these results and the solution are significant enough to have solved the problem posed in the project. Questions to ask yourself when writing this section:
-- _Are the final results found stronger than the benchmark result reported earlier?_
-- _Have you thoroughly analyzed and discussed the final solution?_
-- _Is the final solution significant enough to have solved the problem?_
 
+As we said in the Refinement section, the benchmark blog post got a validation IOU of 0.3069. On our first hyperparameter tuning run, our best benchmark model ended up with a validation IOU of 0.32162. The higher performance may be because of longer training time.
 
+Our best and final model got a validation IOU of 0.435. Since our final model is performing better than the benchmarks, we can be happy with that result.
 
+As we said in the previous section, this model will have to do for this project. There could certainly be some improvements (which we will mention in the conclusion), but after checking how our model performs, we can only say that whether we use the model will depend on our problem. It may be that we only want a production model that can at least figure out if there is more than x% of floodwater in the image, meaning that we use the model to classify whether there is a lot of floodwater or none.
+
+If we want to be able to predict where exactly floodwater is via satellite imagery, we would need to improve the model.
+
+All-in-all, we were able to build a decent model with an end-to-end notebook. Since this is a difficult task which is still being actively researched, we couldn't expect +99% accuracy like we would for a cats and dogs classifier.
 
 ## V. Conclusion
 _(approx. 1-2 pages)_
