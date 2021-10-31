@@ -1,0 +1,3 @@
+filename = 'floodwater-data.zip'
+sha256 = 'fcbbe3bc02ec6a6d28b10ca57d69e30497ff1a18039d53f18feffb7e802dcbd3'
+url = 'https://map-floodwater-driven-data-competition.s3.amazonaws.com/floodwater-data/floodwater-data.zip'

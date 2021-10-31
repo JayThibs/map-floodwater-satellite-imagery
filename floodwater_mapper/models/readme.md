@@ -1,0 +1,3 @@
+# Custom Models
+
+This directory is where we store all the custom models for the floodwater mapper. Since we are using the `segmentation_model_pytorch` library, we can simply call those models in `lit_models`. However, when we want to customize our model more than just the segmentation model, we can create a model python file in this directory and import it in `lit_models` and store it in `self.model` in the `__init__` function.

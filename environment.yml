@@ -1,0 +1,16 @@
+name: floodwater_mapper
+channels:
+  - defaults
+dependencies:
+  - python=3.7
+  - cudatoolkit=10.1
+  - cudnn=7.6
+  - rasterio
+  - pip
+  - pip:
+    - wandb==0.12.2
+    - pytorch-lightning==1.4.5
+    - pandas-path
+    - git+https://github.com/qubvel/segmentation_models.pytorch.git
+    - wget
+    - tqdm
