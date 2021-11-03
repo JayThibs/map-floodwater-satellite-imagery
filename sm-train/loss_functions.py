@@ -14,11 +14,7 @@ class XEDiceLoss(nn.Module):
 
     def forward(self, pred, true):
         valid_pixel_mask = true.ne(255) # valid pixel mask
-
-#         print(true)
-#         print(type(true))
-#         print(tensor(0, dtype=torch.double).cuda())
-#         print(type(tensor(0, dtype=torch.double).cuda()))
+        
         # Cross-entropy loss
         temp_true = torch.where((true == 255), 0, true) # cast 255 to 0 temporarily
         xe_loss = self.xe(pred, temp_true).float()

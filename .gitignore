@@ -1,5 +1,6 @@
 /app/.aws/**
 /app/.streamlit/**
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
