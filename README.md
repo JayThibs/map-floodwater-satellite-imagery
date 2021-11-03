@@ -1,6 +1,6 @@
 # Map Floodwater of SAR Imagery with SageMaker
 
-A report of the entire project can be found [here](https://github.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/blob/main/capstone_report.md).
+A report of the entire project can be found [here](https://github.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/blob/main/capstone_report.md). Please check the [Projects](https://github.com/JayThibs/map-floodwater-satellite-imagery/projects) tab for what I'm looking to work on next.
 
 **Here's a view of the Streamlit Web App that makes predictions with SageMaker model endpoint:**
 
