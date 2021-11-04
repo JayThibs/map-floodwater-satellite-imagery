@@ -1,5 +1,4 @@
-# Machine Learning Engineer Nanodegree
-## Mapping Floodwater with SAR Imagery Capstone Project
+# Mapping Floodwater with SAR Imagery
 Jacques Thibodeau  
 October 31st, 2021
 
