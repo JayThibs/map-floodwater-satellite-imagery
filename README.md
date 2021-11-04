@@ -2,15 +2,13 @@
 
 A **report of the entire project** can be found [here](https://github.com/JayThibs/map-floodwater-sar-imagery-on-sagemaker/blob/main/capstone_report.md). Please check the [Projects](https://github.com/JayThibs/map-floodwater-satellite-imagery/projects) tab for what I'm looking to work on next.
 
-**Here's a view of the Streamlit Web App that makes predictions with SageMaker model endpoint:**
-
-<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-satellite-imagery/main/imgs/st-prediction-efficientnet-b0-cropped.png" alt="st-prediction-efficientnet-b0-cropped.png" width="500" />
-
 This repository focuses on training semantic segmentation models to predict the presence of floodwater for disaster prevention. The repository contains code from our submission to the STAC Overflow: Map Floodwater from Radar Imagery competition on DrivenData.org.
 
 ![c2s-sentinel-1](./imgs/c2s-sentinel-1.jpeg)
 
-The focus of this repository is to train and deploy semantic segmentation with SageMaker. For my team's repository of the actual competition, go [here](https://github.com/JayThibs/map-floodwater-drivendata-competition).
+**Here's a view of the Streamlit Web App that makes predictions with SageMaker model endpoint:**
+
+<img src="https://raw.githubusercontent.com/JayThibs/map-floodwater-satellite-imagery/main/imgs/st-prediction-efficientnet-b0-cropped.png" alt="st-prediction-efficientnet-b0-cropped.png" width="500" />
 
 You can find the competition page [here](https://www.drivendata.org/competitions/81/detect-flood-water/page/385/).
 
